@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+
+"""Console script for methlab."""
+
+import argparse
+import ibdpainting as ip
+import argparse 
+  
+def main():
+    parser = argparse.ArgumentParser(description='ibdpainting')
+
+    parser.add_argument('-i', '--input',
+        help='Path to a VCF file containing genotype data for one or more samples to check.'
+        )
+    parser.add_argument('-n', '--sample_name',
+        help ='Sample name for the individual to check. This must be present in the samples in the input VCF.'
+    )
+    parser.add_argument('-r', '--reference',
+        help="Path to an HDF5 file containing genotype data for a panel of reference individuals to compare the input indivual against. This should be the output of allel.vcf_to_hdf5()"
+    )
+    parser.add_argument('-w', '--window_size',
+        type=int, default=20000,
+        help="Integer window size in base pairs."
+    )
+    parser.add_argument('--expected_match',
+        help="Optional list of sample names in the reference panel that are expected to be ancestors of the test individual.",
+        nargs = "+", required=False
+    )
+    parser.add_argument('--outdir',
+        help="Directory to save the output."
+    )
+    parser.add_argument('--keep_ibd_table', 
+        help="Optional ", default=False,
+        action=argparse.BooleanOptionalAction
+    )
+    parser.add_argument('--max_to_plot', 
+        help="Optional number of the best matching candidates to plot so that the HTML files do not get too large and complicated. Ignored if this is more than the number of samples. Defaults to 20.",
+        type=int, default = 20
+    )
+    args = parser.parse_args()
+
+    # Data frame of IBD at all positions across the genome, and the plot of this
+    itable = ip.ibd_table(args.input, args.reference, args.sample_name, args.window_size)
+    scores = ip.ibd_scores(itable)
+    fig = ip.plot_ibd_table(itable, args.sample_name, args.expected_match, args.max_to_plot)
+    
+    if args.keep_ibd_table:
+        itable.to_csv(args.outdir + "/" + args.sample_name + "_ibd_table.csv", index=False)
+    
+    scores.to_csv( args.outdir + "/" + args.sample_name + "_ibd_scores.csv", index=False)
+    fig.write_html(args.outdir + "/" + args.sample_name + "_plot_ibd.html")
+    
+
+if __name__ == '__main__':
+    main()

@@ -36,6 +36,9 @@ setup(
     install_requires=[
         'numpy', 'pandas', 'plotly', 'h5py', 'scikit-allel', 'pytest'
       ],
-    zip_safe=False
+    zip_safe=False,
+    entry_points = {
+        'console_scripts': ['ibdpainting=ibdpainting.command_line:main'],
+    }
     )
 

@@ -89,7 +89,7 @@ class geneticDistance(object):
         
         return list_of_distance_objects
     
-    def pairwise_distance(self, warn_about_missing_data=False):
+    def pairwise_distance(self):
         """
         Calculate pairwise genetic distance between an input individual and all 
         reference individuals.
@@ -110,18 +110,5 @@ class geneticDistance(object):
         per_locus_difference = abs(masked_geno.sum(2)[:,[0]] - masked_geno.sum(2)[:,1:]) / 2
         # Average over loci
         dxy = per_locus_difference.mean(0)
-
-        if warn_about_missing_data and any(dxy.mask):
-            warn("""
-
-    Pairwise distance could not be calculated for one or more comparisons,
-    probably because there is missing data at all SNPs.
-    The following samples in the reference panel are affected:
-    {}
-
-    """.format(self.samples[1:][dxy.mask])
-            )
-            # Return a vector of -9 t indicate missing data
-            return np.zeros(len(self.samples)-1) -9
         
-        return dxy.data
+        return ma.filled(dxy, -9)

@@ -60,3 +60,15 @@ def test_pairwise_distance_works():
 
     assert check_8249[3] == 0
     assert all(check_8249[:2] > 0)
+    
+    
+def test_missing_data_in_geneticDistance():
+    """Test that pairwise_distance returns -9 if all loci are NA.
+    """
+    vcfd = ip.load_genotype_data(
+        input = input,
+        reference = reference,
+        sample_name = 'S2.15.002'
+    )   
+    vcfd.geno[:,1] = -1
+    assert vcfd.pairwise_distance()[0] == -9

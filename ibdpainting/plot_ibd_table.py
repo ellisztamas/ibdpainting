@@ -48,7 +48,9 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
         )
         # Identify the candidate names *not* among the top `max_to_plot` columns
         ix = np.argpartition(ibd_scores_for_each_candidate, max_to_plot)[max_to_plot:] # index positions
-        columns_to_drop = ibd_table.keys()[ix+1].to_list() # candidate names
+        columns_to_drop = ibd_table.keys()[ix+1].to_list() # candidate names to be removed
+        # Make sure the expected parents are not among the proscribed
+        [ columns_to_drop.remove(x) for x in expected_match if x in columns_to_drop ]        
         ibd_table = ibd_table.drop(columns=columns_to_drop) # drop the candidates
 
     # Make the table long

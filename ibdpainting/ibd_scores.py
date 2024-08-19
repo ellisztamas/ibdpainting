@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-def ibd_scores(ibd_table, rank_threshold:int=20):
+def ibd_scores(ibd_table, rank_threshold:int=100):
     """
     Genetic distance between offspring and parents for pairs of plausible 
     candidate parents.

@@ -9,7 +9,6 @@ from genetic data.
 - [Installation](#installation)
 - [Input data files](#input-data-files)
 - [Usage](#usage)
-- [Dependencies](#dependencies)
 - [Author information](#author-information)
 - [Contributing](#contributing)
 

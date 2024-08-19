@@ -4,7 +4,7 @@ import numpy as np
 import plotly.express as px
 
 
-def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=[], max_to_plot=20):
+def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=[], max_to_plot=10):
     """
     Plot allele sharing across the genome.
 
@@ -54,7 +54,13 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
     # Make the table long
     ibd_table = ibd_table.melt(id_vars=['window'], var_name='candidate', value_name='distance')
     # Column indicating which candidates should be plotted a different colour.
-    ibd_table['expected'] = ibd_table['candidate'].isin(expected_match)
+    ibd_table['colour'] = np.where(
+        ibd_table['candidate'].isin(expected_match), ibd_table['candidate'], "Other"
+        )
+    # Unique list of labels for the legend, sorted to plot "Other" first
+    unique_legend_labels = list(ibd_table['colour'].unique())
+    unique_legend_labels.insert(0, unique_legend_labels.pop(unique_legend_labels.index("Other")))
+
     # Split the 'window' column up into separate columns for chromosome, start and stop positions
     ibd_table[['chr', 'window']] = ibd_table['window'].str.split(":", expand=True)
     ibd_table[['start', 'stop']] = ibd_table['window'].str.split("-", expand=True)
@@ -63,18 +69,23 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
     ibd_table['stop'] = ibd_table['stop'].astype(int)
     ibd_table['midpoint'] = (ibd_table['start'] + ibd_table['stop']) / 2
 
+
     fig = px.line(
         ibd_table,
-        x="midpoint", y="distance", color="expected",
+        x="midpoint", y="distance", color="colour", line_group="candidate",
         title=sample_name,
         labels={
             'midpoint' : 'Position (bp)',
             'distance' : 'Genetic distance'        
         },
         hover_data=['candidate'],
-        category_orders={'expected': [False, True]},
+        color_discrete_sequence=[
+                 "gray", "red", "blue"],
+        category_orders={'colour': unique_legend_labels},
         facet_row = "chr"
         )
     fig.update_traces(mode="markers+lines")
 
     return fig
+
+

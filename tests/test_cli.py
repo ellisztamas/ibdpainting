@@ -17,5 +17,5 @@ ibdpainting \
     --window_size 1000 \
     --outdir tests/test_output \
     --expected_match 1158 \
-    --keep_ibd_table
+    --no-interactive
 """

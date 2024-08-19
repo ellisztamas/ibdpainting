@@ -30,13 +30,19 @@ def main():
         help="Directory to save the output."
     )
     parser.add_argument('--keep_ibd_table', 
-        help="Optional ", default=False,
+        help="If set, write an intermediate text file giving genetic distance between the crossed individual and each candidate at each window in the genome. Defaults to False, because these can be quite large.",
+        default=False,
         action=argparse.BooleanOptionalAction
     )
     parser.add_argument('--max_to_plot', 
         help="Optional number of the best matching candidates to plot so that the HTML files do not get too large and complicated. Ignored if this is more than the number of samples. Defaults to 20.",
-        type=int, default = 20
+        type=int, default = 10
     )
+    parser.add_argument('--interactive',
+        help="If set, save the output plot as an interactive HTML plot including information on candidates within the plot.",
+        default=True,
+        action=argparse.BooleanOptionalAction
+        )
     args = parser.parse_args()
 
     # Data frame of IBD at all positions across the genome, and the plot of this
@@ -48,7 +54,13 @@ def main():
         itable.to_csv(args.outdir + "/" + args.sample_name + "_ibd_table.csv", index=False)
     
     scores.to_csv( args.outdir + "/" + args.sample_name + "_ibd_scores.csv", index=False)
-    fig.write_html(args.outdir + "/" + args.sample_name + "_plot_ibd.html")
+
+    fig.write_image(args.outdir + "/" + args.sample_name + "_plot_ibd.png")
+    
+    if args.interactive:
+        fig.write_html(args.outdir + "/" + args.sample_name + "_plot_ibd.html")
+    
+        
     
 
 if __name__ == '__main__':

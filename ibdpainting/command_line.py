@@ -43,6 +43,13 @@ def main():
         default=True,
         action=argparse.BooleanOptionalAction
         )
+    parser.add_argument('--height',
+        help="Height in centimetres of the output PNG file.",
+        default=675
+        )
+    parser.add_argument('--width',
+        help="Height in centimetres of the output PNG file.",
+        default=900)
     args = parser.parse_args()
 
     # Data frame of IBD at all positions across the genome, and the plot of this
@@ -55,7 +62,10 @@ def main():
     
     scores.to_csv( args.outdir + "/" + args.sample_name + "_ibd_scores.csv", index=False)
 
-    fig.write_image(args.outdir + "/" + args.sample_name + "_plot_ibd.png")
+    fig.write_image(
+        args.outdir + "/" + args.sample_name + "_plot_ibd.png"
+        height = args.height, width = args.width
+        )
     
     if args.interactive:
         fig.write_html(args.outdir + "/" + args.sample_name + "_plot_ibd.html")

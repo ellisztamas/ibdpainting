@@ -78,14 +78,15 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
         title=sample_name,
         labels={
             'midpoint' : 'Position (bp)',
-            'distance' : 'Genetic distance'        
+            'distance' : 'Distance'        
         },
         hover_data=['candidate'],
-        color_discrete_sequence=[
-                 "gray", "red", "blue"],
+        color_discrete_sequence=["gray", "red", "blue"],
         category_orders={'colour': unique_legend_labels},
         facet_row = "chr"
         )
+    fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1])) # Remove "chr=" from facet labels
+    fig.update_layout(legend_title_text='Candidate')
     fig.update_traces(mode="markers+lines")
 
     return fig

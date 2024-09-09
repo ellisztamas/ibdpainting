@@ -10,13 +10,13 @@ def main():
     parser = argparse.ArgumentParser(description='ibdpainting')
 
     parser.add_argument('-i', '--input',
-        help='Path to a VCF file containing genotype data for one or more samples to check.'
+        help='Path to an HDF5 file containing genotype data for one or more samples to check.  This should be the output of allel.vcf_to_hdf5().'
         )
     parser.add_argument('-n', '--sample_name',
-        help ='Sample name for the individual to check. This must be present in the samples in the input VCF.'
+        help ='Sample name for the individual to check. This must be present in the samples in the input file.'
     )
     parser.add_argument('-r', '--reference',
-        help="Path to an HDF5 file containing genotype data for a panel of reference individuals to compare the input indivual against. This should be the output of allel.vcf_to_hdf5()"
+        help="Path to an HDF5 file containing genotype data for a panel of reference individuals to compare the input indivual against. This should be the output of allel.vcf_to_hdf5()."
     )
     parser.add_argument('-w', '--window_size',
         type=int, default=20000,
@@ -63,7 +63,7 @@ def main():
     scores.to_csv( args.outdir + "/" + args.sample_name + "_ibd_scores.csv", index=False)
 
     fig.write_image(
-        args.outdir + "/" + args.sample_name + "_plot_ibd.png"
+        args.outdir + "/" + args.sample_name + "_plot_ibd.png",
         height = args.height, width = args.width
         )
     

@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 import ibdpainting as ip
 
-input = 'tests/test_data/panel_to_test.vcf.gz'
+input = 'tests/test_data/panel_to_test.hdf5'
 reference = 'tests/test_data/reference_panel.hdf5'
-chr1 = 'tests/test_data/reference_panel_chr1.vcf.gz'
+chr1 = 'tests/test_data/reference_panel_chr1.hdf5'
 
 def test_load_genotype_data_gives_right_output():
     """
@@ -26,7 +26,7 @@ def test_load_genotype_data_gives_right_output():
 
 def test_load_genotype_data_fails_if_missing_sample():
     """
-    Check that load_genotype_data fails if the sample name is not in the input VCF
+    Check that load_genotype_data fails if the sample name is not in the input file.
     """
     with pytest.raises(Exception):
         ip.load_genotype_data(

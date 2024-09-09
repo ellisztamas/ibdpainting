@@ -1,10 +1,10 @@
 import ibdpainting as ip
 
 
-input = 'tests/test_data/panel_to_test.vcf.gz'
+input = 'tests/test_data/panel_to_test.hdf5'
 reference = 'tests/test_data/reference_panel.hdf5'
-ref_vcf = 'tests/test_data/reference_panel.vcf.gz'
-chr1 = 'tests/test_data/reference_panel_chr1.vcf.gz'
+ref_vcf = 'tests/test_data/reference_panel.hdf5'
+chr1 = 'tests/test_data/reference_panel_chr1.hdf5'
 
 
 def test_split_into_windows_functions():
@@ -23,7 +23,7 @@ def test_split_into_windows_functions():
 
 def test_pairwise_distance_works():
     """
-    There are four accessions in the reference VCF.
+    There are four accessions in the reference panel.
     Test each against the whole panel, and check that one of them comes out as
     identical in each case.
     """

@@ -12,14 +12,14 @@ def ibd_table(input:str, reference:str, sample_name:str, window_size:int):
     Parameters
     ==========
     input: str
-        Path to a VCF file containing genotype data for one or more samples to
+        Path to an HDF5 file containing genotype data for one or more samples to
         test
     reference: str
         Path to an HDF5 file containing genotype data for a panel of reference
         individuals to compare the test individual against.
     sample_name: str
         Sample name for the individual to check.
-        This must be present in the samples in the input VCF.
+        This must be present in the samples in the input HDF5 file.
     window_size: int
         Window size in base pairs.
 

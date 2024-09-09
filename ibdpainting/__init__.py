@@ -2,7 +2,7 @@
 
 __author__ = """Tom Ellis"""
 __email__ = 'thomas.ellis@gmi.oeaw.ac.at'
-__version__ = '0.1.1'
+__version__ = '0.2.0'
 
 from ibdpainting.load_genotype_data import load_genotype_data
 from ibdpainting.geneticDistance import *

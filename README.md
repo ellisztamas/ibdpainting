@@ -31,13 +31,15 @@ pip install ibdpainting
 
 ## Input data files
 
-The program requires two files containing SNP data:
+The program requires two HDF5 files created from VCF files:
 
-* **Input panel**: A VCF file containing SNPs for the crossed individual(s).
+* **Input panel**: An HDF5 file containing SNPs for the crossed individual(s).
 This can contain multiple individuals, but the program will only work on one at
 a time.
-* **Reference panel**: An HDF5 file created from a VCF file for a panel of reference candidate
-parents. The reason for using HDF5 is that it allows for loading data in chunks,
+* **Reference panel**: An HDF5 file conataining SNP information for a panel of reference candidate
+parents.
+
+The reason for using HDF5 is that it allows for loading data in chunks,
 which is much quicker than loading an entire VCF file into memory every time you
 want to check a single sample. I recommend creating this using
 [vcf_to_hdf5](https://scikit-allel.readthedocs.io/en/latest/io.html#allel.vcf_to_hdf5)
@@ -70,7 +72,7 @@ After installing, `ibdpainting` can be run as a command line tool as follows
 
 ```
 ibdpainting \
-    --input input_vcf.vcf.gz \
+    --input input_file.hdf5 \
     --reference reference_panel.hdf5 \
     --window_size 500000 \
     --sample_name "my_cross" \
@@ -80,11 +82,11 @@ ibdpainting \
 
 Explanation of the parameters (see also `ibdpainting --help`):
 
-* `--input`: VCF file containing the crossed individuals. See [above](#input-data-files).
+* `--input`: HDF5 file containing the crossed individuals. See [above](#input-data-files).
 * `--reference`: HDF5 file containing the reference panel. See [above](#input-data-files).
 * `--window_size`: Window size in base pairs.
 * `--sample_name`: Name of the crossed individual to compare to the reference 
-panel. This must be present in the input VCF file - you can check with something
+panel. This must be present in the input file - you can check the original VCF file with something
 like `bcftools query -l $input_vcf.vcf.gz | grep "my_cross"`.
 * `--expected_match`: List of one or more expected parents of the test individual.
 These names should be among the samples in the reference panel. Names should be

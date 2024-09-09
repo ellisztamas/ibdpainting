@@ -43,7 +43,7 @@ bcftools view \
 
 ## HDF5 files
 
-HDF5 file matching the 'reference panel' VCF file described above.
+HDF5 file matching the VCF files described above.
 
 ```
 import allel
@@ -51,6 +51,18 @@ import allel
 allel.vcf_to_hdf5(
     'tests/test_data/reference_panel.vcf.gz',
     'tests/test_data/reference_panel.hdf5',
+    fields='*', overwrite=True
+    )
+
+allel.vcf_to_hdf5(
+    'tests/test_data/panel_to_test.vcf.gz',
+    'tests/test_data/panel_to_test.hdf5',
+    fields='*', overwrite=True
+    )
+
+allel.vcf_to_hdf5(
+    'tests/test_data/reference_panel_chr1.vcf.gz',
+    'tests/test_data/reference_panel_chr1.hdf5',
     fields='*', overwrite=True
     )
 

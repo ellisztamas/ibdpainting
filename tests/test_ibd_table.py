@@ -1,10 +1,10 @@
 import ibdpainting as ip
 
 
-input = 'tests/test_data/panel_to_test.vcf.gz'
+input = 'tests/test_data/panel_to_test.hdf5'
 reference = 'tests/test_data/reference_panel.hdf5'
-ref_vcf = 'tests/test_data/reference_panel.vcf.gz'
-chr1 = 'tests/test_data/reference_panel_chr1.vcf.gz'
+ref_vcf = 'tests/test_data/reference_panel.hdf5'
+chr1 = 'tests/test_data/reference_panel_chr1.hdf5'
 
 def test_ibd_table():
     ibd = ip.ibd_table(

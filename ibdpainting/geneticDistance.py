@@ -14,7 +14,7 @@ class geneticDistance(object):
         Vector of length n giving chromosome labels for each SNP.
     pos: array
         Vector of length n giving SNP positions. Note that SNP positions are inherited from 
-        skikit allel and give row numbers from the input VCF file rather than
+        skikit allel and give row numbers from the input HDF5 file rather than
         base-pair positions on each chromosome.
     geno: array
         m x n x 2 array of genotype data where axes index SNPs, individuals, and 

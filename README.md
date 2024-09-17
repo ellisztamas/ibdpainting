@@ -9,6 +9,7 @@ from genetic data.
 - [Installation](#installation)
 - [Input data files](#input-data-files)
 - [Usage](#usage)
+- [Output and interpretation](#output-and-interpretation)
 - [Author information](#author-information)
 - [Contributing](#contributing)
 
@@ -18,9 +19,11 @@ from genetic data.
 derived from a crosses between individuals in a reference panel, and you want to
 verify that the crosses really are the genotype you think they are. Taking the
 simple example of a biparental cross, you would expect an offspring of the F2 
-generation or later to be a mosaic of regions homozygous for either parent, 
-potentially interspersed with heterozygous regions, depending on the generation.
-`ibdpainting` is a tool to visualise this mosaic pattern.
+generation or later to be a mosaic of regions that are identical by descent (IBD)
+to either parent, potentially interspersed with heterozygous regions, depending
+on the generation.
+`ibdpainting` is a tool to visualise this mosaic pattern by 'painting' the
+pattern of IBD across the genome.
 
 ## Installation
 
@@ -80,7 +83,7 @@ ibdpainting \
     --outdir path/to/output/directory
 ```
 
-Explanation of the parameters (see also `ibdpainting --help`):
+Explanation of the parameters:
 
 * `--input`: HDF5 file containing the crossed individuals. See [above](#input-data-files).
 * `--reference`: HDF5 file containing the reference panel. See [above](#input-data-files).
@@ -93,14 +96,28 @@ These names should be among the samples in the reference panel. Names should be
 separated by spaces.
 * `--outdir`: Path to the directory to save the output.
 
-Additional optional parameters:
+See the output of `ibdpainting --help` for additional optional arguments.
 
-* `--keep_ibd_table`: Write an intermediate text file giving genetic distance 
-between the crossed individual and each candidate at each window in the genome.
-Defaults to False, because these can be quite large.
-* `--max_to_plot`: Integer number of candidates to plot.
-`ibdpainting` makes an intial ranking of candidates based on genome-wide 
-similarity to the test individual, and plots only the top candidates.
+## Output and interpretation
+
+By default, `ibdpainting` creates three files:
+
+* A `plot_ibd.png` image of the genome, showing the position along each chromomosome
+along the x-axis, and the genetic distance from the progeny to each candidate 
+along the y-axis. If a candidate parent is IBD to the progeny, points on the 
+y-axis should be zero, genotyping errors notwithstanding. Candidate parents
+given as expected parents will be shown with coloured lines. The (usually ten)
+next-closest other candidates are shown in grey.
+* An `ibd_score.csv` file listing possible combinations of candidate parents
+and a score for each. The score for a single pair is calculated by the minimum
+distance between the offspring and either candidate in each window, and averaging
+these over all non-NA windows. Scores close to zero indicate a better match.
+A good match will ideally be an order of magnitude better than the next pair.
+Only scores for pairs with the 100 most likely candidates are shown.
+* `plot_ibd.html`: An optional interactive version of the `png` file. Roll over points to see which candidate is which. These files are about ten times larger than the `png` files. Disable with `--no-interactive`.
+* `ibd_table.csv`: An optional text file giving genetic distances from the progeny individual to every candidate in every window. These files are typically big, so are not created by default. Enable with `--keep_ibd_table`.
+
+For examples of the output and the interpretation of different patterns, see [the examples here](https://github.com/ellisztamas/ibdpainting/blob/main/setup.py/example_results.html).
 
 ## Author information
 

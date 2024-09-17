@@ -117,7 +117,7 @@ Only scores for pairs with the 100 most likely candidates are shown.
 * `plot_ibd.html`: An optional interactive version of the `png` file. Roll over points to see which candidate is which. These files are about ten times larger than the `png` files. Disable with `--no-interactive`.
 * `ibd_table.csv`: An optional text file giving genetic distances from the progeny individual to every candidate in every window. These files are typically big, so are not created by default. Enable with `--keep_ibd_table`.
 
-For examples of the output and the interpretation of different patterns, see [the examples here](https://github.com/ellisztamas/ibdpainting/blob/main/setup.py/example_results.html).
+For examples of the output and the interpretation of different patterns, see [the examples here](https://ellisztamas.github.io/assets/06_ibdpainting_results.html).
 
 ## Author information
 

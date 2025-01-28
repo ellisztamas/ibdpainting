@@ -1,4 +1,3 @@
-
 import ibdpainting as ip
 import numpy as np
 
@@ -43,7 +42,7 @@ def test_ibd_scores_propogates_NA():
     )
     # Set values for 1158 as missing
     ibd['1158'] = -9
-    ibd = ibd.replace(-9, np.NaN)
+    ibd = ibd.replace(-9, np.nan)
     
     scores = ip.ibd_scores(ibd)
     

@@ -10,7 +10,7 @@ def main():
     parser = argparse.ArgumentParser(description='ibdpainting')
 
     parser.add_argument('-i', '--input',
-        help='Path to an HDF5 file containing genotype data for one or more samples to check.  This should be the output of allel.vcf_to_hdf5().'
+        help='Path to an HDF5 file containing genotype data for one or more samples to check. This should be the output of allel.vcf_to_hdf5().'
         )
     parser.add_argument('-n', '--sample_name',
         help ='Sample name for the individual to check. This must be present in the samples in the input file.'
@@ -19,8 +19,8 @@ def main():
         help="Path to an HDF5 file containing genotype data for a panel of reference individuals to compare the input indivual against. This should be the output of allel.vcf_to_hdf5()."
     )
     parser.add_argument('-w', '--window_size',
-        type=int, default=20000,
-        help="Integer window size in base pairs."
+        type=int, default=500000,
+        help="Integer window size in base pairs. Defaults to 500000 bp."
     )
     parser.add_argument('--expected_match',
         help="Optional list of sample names in the reference panel that are expected to be ancestors of the test individual.",
@@ -44,11 +44,11 @@ def main():
         action=argparse.BooleanOptionalAction
         )
     parser.add_argument('--height',
-        help="Height in centimetres of the output PNG file.",
+        help="Height in pixels of the output PNG file. Defaults to 675.",
         default=675
         )
     parser.add_argument('--width',
-        help="Height in centimetres of the output PNG file.",
+        help="Height in pixels of the output PNG file. Defaults to 900.",
         default=900)
     args = parser.parse_args()
 

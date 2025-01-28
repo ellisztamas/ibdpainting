@@ -40,7 +40,7 @@ def ibd_scores(ibd_table, rank_threshold:int=100):
     pair is more likely to be a match.
     """
     # Coerce missing data to NaN for correct column means.
-    ibd_table = ibd_table.replace(-9,np.NaN)
+    ibd_table = ibd_table.replace(-9,np.nan)
     
     # Get column-mean IBD for each candidate, allowing for missing data
     ibd_scores_for_each_candidate = np.array(

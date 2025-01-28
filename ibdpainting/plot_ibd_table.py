@@ -37,7 +37,7 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
 
     
     # Coerce missing data to NaN for correct column means.
-    ibd_table = ibd_table.replace(-9,np.NaN)
+    ibd_table = ibd_table.replace(-9,np.nan)
 
     # Identify the candidate names *not* among the top `max_to_plot` columns and remove
     # If `max_to_plot` is less than the number of candidates.

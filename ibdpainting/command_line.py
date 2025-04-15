@@ -66,7 +66,7 @@ def main():
         args.sample_name,
         args.expected_match,
         args.max_to_plot,
-        args.plot_heterozygosity=True
+        args.plot_heterozygosity
         )
     
     if args.keep_ibd_table:

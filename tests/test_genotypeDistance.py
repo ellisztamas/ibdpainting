@@ -72,3 +72,24 @@ def test_missing_data_in_geneticDistance():
     )   
     vcfd.geno[:,1] = -1
     assert vcfd.pairwise_distance()[0] == -9
+
+def test_heterozygosity():
+    vcfd = ip.load_genotype_data(
+        input = input,
+        reference = reference,
+        sample_name = 'S2.15.002'
+    )
+    het = vcfd.heterozygosity()
+    assert 0 <= het <= 1
+    assert isinstance(het, float)
+
+def test_heterozygosity_missing_data():
+    """Test that heterozygosity returns -9 if there are no heterozygous loci.
+    """
+    vcfd = ip.load_genotype_data(
+        input = input,
+        reference = reference,
+        sample_name = 'S2.15.002'
+    )
+    vcfd.geno[vcfd.geno == 1] = -9
+    assert vcfd.heterozygosity() == 0

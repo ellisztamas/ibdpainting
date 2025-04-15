@@ -4,10 +4,9 @@ import numpy as np
 import plotly.express as px
 
 
-def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=[], max_to_plot=10):
+def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=[], max_to_plot=10, plot_heterozygosity: bool=False):
     """
     Plot allele sharing across the genome.
-
 
     Create a interactive line graph showing genetic distance from a test
     individual to each sample in a panel of reference individuals.
@@ -35,7 +34,14 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
     which.
     """
 
-    
+    if plot_heterozygosity:
+        # If heterozygosity is to be plotted, add it to the list of expected matches
+        # so that it is plotted in colour
+        expected_match.append('heterozygosity')
+    else:
+        # If not plotting heterozygosity, remove it from the table
+        ibd_table = ibd_table.drop(columns=['heterozygosity'], axis=1)
+
     # Coerce missing data to NaN for correct column means.
     ibd_table = ibd_table.replace(-9,np.nan)
 
@@ -90,5 +96,3 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
     fig.update_traces(mode="markers+lines")
 
     return fig
-
-

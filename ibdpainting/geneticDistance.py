@@ -112,3 +112,17 @@ class geneticDistance(object):
         dxy = per_locus_difference.mean(0)
         
         return ma.filled(dxy, -9)
+
+    def heterozygosity(self):
+        """
+        Calculate heterozygosity in the input individual.
+
+        The calculation is done using masked arrays to account for missing data.
+
+        Returns
+        =======
+        Float between zero and one.
+        """
+        masked_geno = ma.masked_array(self.geno, self.geno < 0)
+        per_locus_heterozygosity = masked_geno.sum(2)[:,0] == 1
+        return per_locus_heterozygosity.mean()

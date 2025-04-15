@@ -39,6 +39,9 @@ def ibd_scores(ibd_table, rank_threshold:int=100):
     offspring, averaged over windows. Values closer to zero indicate that the 
     pair is more likely to be a match.
     """
+    # Remove the column with heterozygosity from the table, as this is not a candidate
+    # for parentage.
+    ibd_table = ibd_table.drop(columns=['heterozygosity'], axis=1)  
     # Coerce missing data to NaN for correct column means.
     ibd_table = ibd_table.replace(-9,np.nan)
     

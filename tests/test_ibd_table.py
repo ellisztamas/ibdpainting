@@ -7,7 +7,7 @@ ref_vcf = 'tests/test_data/reference_panel.hdf5'
 chr1 = 'tests/test_data/reference_panel_chr1.hdf5'
 
 def test_ibd_table():
-    ibd = ip.ibd_table(
+    ibd = ibd_table(
         input=ref_vcf,
         reference=reference,
         sample_name='1158',
@@ -21,3 +21,6 @@ def test_ibd_table():
     )
     # Check that a non-parent are not all -9.
     assert any(ibd['8249'] != 0)
+
+    assert not any(ibd['heterozygosity'] < 0)
+    assert not any(ibd['heterozygosity'] > 0)

@@ -50,12 +50,24 @@ def main():
     parser.add_argument('--width',
         help="Height in pixels of the output PNG file. Defaults to 900.",
         default=900)
+    parser.add_argument('--plot_heterozygosity',
+        help="If set, plot the heterozygosity of the test individual in the output plot.",
+        default=True,
+        action=argparse.BooleanOptionalAction
+    )
+    parser.add_argument('--version', action='version', version='%(prog)s {__version__}')
     args = parser.parse_args()
 
     # Data frame of IBD at all positions across the genome, and the plot of this
     itable = ip.ibd_table(args.input, args.reference, args.sample_name, args.window_size)
     scores = ip.ibd_scores(itable)
-    fig = ip.plot_ibd_table(itable, args.sample_name, args.expected_match, args.max_to_plot)
+    fig = ip.plot_ibd_table(
+        itable,
+        args.sample_name,
+        args.expected_match,
+        args.max_to_plot,
+        args.plot_heterozygosity=True
+        )
     
     if args.keep_ibd_table:
         itable.to_csv(args.outdir + "/" + args.sample_name + "_ibd_table.csv", index=False)

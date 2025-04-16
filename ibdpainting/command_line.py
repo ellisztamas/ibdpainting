@@ -3,7 +3,7 @@
 """Console script for ibdpainting."""
 
 import argparse
-
+from ibdpainting import __version__
 
 def main():
     parser = argparse.ArgumentParser(description='ibdpainting')
@@ -54,7 +54,11 @@ def main():
         default=True,
         action=argparse.BooleanOptionalAction
     )
-    parser.add_argument('--version', action='version', version='%(prog)s {__version__}')
+    parser.add_argument('--version',
+        action='version',
+        version=f'%(prog)s {__version__}'
+        )
+    
     args = parser.parse_args()
 
     # Only import and run analysis if actually needed

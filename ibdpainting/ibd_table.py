@@ -1,7 +1,7 @@
 import pandas as pd
 import warnings
 
-from ibdpainting import load_genotype_data
+from ibdpainting.load_genotype_data import load_genotype_data
 
 def ibd_table(input:str, reference:str, sample_name:str, window_size:int):
     """

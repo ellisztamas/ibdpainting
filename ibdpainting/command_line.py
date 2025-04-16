@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
-"""Console script for methlab."""
+"""Console script for ibdpainting."""
 
 import argparse
-import ibdpainting as ip
-import argparse 
-  
+
+
 def main():
     parser = argparse.ArgumentParser(description='ibdpainting')
 
@@ -58,16 +57,32 @@ def main():
     parser.add_argument('--version', action='version', version='%(prog)s {__version__}')
     args = parser.parse_args()
 
+    # Only import and run analysis if actually needed
+    if len(vars(args)) > 1:  # If there are actual arguments besides --help
+        run_analysis(args)
+    else:
+        parser.print_help()
+
+def run_analysis(args):
+    import os
+    
+    from ibdpainting.ibd_table import ibd_table
+    from ibdpainting.ibd_scores import ibd_scores
+    from ibdpainting.plot_ibd_table import plot_ibd_table
+
     # Data frame of IBD at all positions across the genome, and the plot of this
-    itable = ip.ibd_table(args.input, args.reference, args.sample_name, args.window_size)
-    scores = ip.ibd_scores(itable)
-    fig = ip.plot_ibd_table(
+    itable = ibd_table(args.input, args.reference, args.sample_name, args.window_size)
+    scores = ibd_scores(itable)
+    fig = plot_ibd_table(
         itable,
         args.sample_name,
         args.expected_match,
         args.max_to_plot,
         args.plot_heterozygosity
         )
+    
+    if not os.path.isdir(args.outdir):
+        os.makedirs(args.outdir)
     
     if args.keep_ibd_table:
         itable.to_csv(args.outdir + "/" + args.sample_name + "_ibd_table.csv", index=False)
@@ -82,8 +97,8 @@ def main():
     if args.interactive:
         fig.write_html(args.outdir + "/" + args.sample_name + "_plot_ibd.html")
     
-        
-    
+
+
 
 if __name__ == '__main__':
     main()

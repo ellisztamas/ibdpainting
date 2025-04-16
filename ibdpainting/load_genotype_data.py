@@ -1,7 +1,7 @@
 import allel
 import h5py
 import numpy as np
-import ibdpainting.geneticDistance
+from ibdpainting.geneticDistance import geneticDistance
 
 def load_genotype_data(input, reference, sample_name):
     """
@@ -94,7 +94,7 @@ def load_genotype_data(input, reference, sample_name):
         )
     
     # Define an output before closing the Hdf5 file
-    output = ibdpainting.geneticDistance(
+    output = geneticDistance(
         samples = new_samples,
         chr = np.array(ref_str_data['chr'])[np.where(which_SNPs_to_keep['ref'])[0]],
         pos = ref_hdf5['variants/POS'][:][which_SNPs_to_keep['ref']],

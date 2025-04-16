@@ -1,4 +1,5 @@
 import pandas as pd
+import warnings
 
 from ibdpainting import load_genotype_data
 
@@ -42,8 +43,11 @@ def ibd_table(input:str, reference:str, sample_name:str, window_size:int):
         [ v.pairwise_distance() for v in distances_in_windows.values() ],
         columns = genetic_distance.samples[1:]
     )
+
     # Add and extra column for the number of heterozygous SNPs in each window
-    distance_array['heterozygosity'] = [ v.heterozygosity() for v in distances_in_windows.values() ]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        distance_array['heterozygosity'] = [ v.heterozygosity() for v in distances_in_windows.values() ]    
     # Add the window names to the dataframe as the first column
     distance_array.insert(0, 'window', distances_in_windows.keys())
 

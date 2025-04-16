@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import warnings
 
 def ibd_scores(ibd_table, rank_threshold:int=100):
     """
@@ -46,9 +47,11 @@ def ibd_scores(ibd_table, rank_threshold:int=100):
     ibd_table = ibd_table.replace(-9,np.nan)
     
     # Get column-mean IBD for each candidate, allowing for missing data
-    ibd_scores_for_each_candidate = np.array(
-        [ np.nanmean(ibd_table[col]) for col in ibd_table.keys()[1:] ]
-    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        ibd_scores_for_each_candidate = np.array(
+            [ np.nanmean(ibd_table[col]) for col in ibd_table.keys()[1:] ]
+        )
     # Get the indices of the top N values in ibd_scores_for_each_candidate
     # where N is rank_threshold
     if rank_threshold < ibd_table.shape[1]:
@@ -62,10 +65,12 @@ def ibd_scores(ibd_table, rank_threshold:int=100):
     for i in score_ix+1: # +1 is to skip the column with window names
         for j in score_ix+1:
             if j >= i:
-                # List containing the ID of candidates 1 and 2, plus the minimum genetic distance
-                scores_for_pairs.append(
-                    [ibd_table.keys()[i], ibd_table.keys()[j], np.nanmean(ibd_table.iloc[:, [i,j]].min(axis=1, skipna=False))]
-                    )
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    # List containing the ID of candidates 1 and 2, plus the minimum genetic distance
+                    scores_for_pairs.append(
+                        [ibd_table.keys()[i], ibd_table.keys()[j], np.nanmean(ibd_table.iloc[:, [i,j]].min(axis=1, skipna=False))]
+                        )
     scores_for_pairs = pd.DataFrame(scores_for_pairs, columns = ['parent1', 'parent2', 'min_IBD'])
     scores_for_pairs = scores_for_pairs.sort_values('min_IBD')
     

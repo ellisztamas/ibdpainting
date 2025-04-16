@@ -37,7 +37,7 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
     if plot_heterozygosity:
         # If heterozygosity is to be plotted, add it to the list of expected matches
         # so that it is plotted in colour
-        expected_match.append('heterozygosity')
+        expected_match.insert(0,'heterozygosity')
     else:
         # If not plotting heterozygosity, remove it from the table
         ibd_table = ibd_table.drop(columns=['heterozygosity'], axis=1)
@@ -65,8 +65,11 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
     ibd_table['colour'] = np.where(
         ibd_table['candidate'].isin(expected_match), ibd_table['candidate'], "Other"
         )
-    # Unique list of labels for the legend, sorted to plot "Other" first
+    # Unique list of labels for the legend, sorted to plot "Other" first, then
+    # 'heterozygosity' and then the expected matches.
     unique_legend_labels = list(ibd_table['colour'].unique())
+    if plot_heterozygosity:
+        unique_legend_labels.insert(0, unique_legend_labels.pop(unique_legend_labels.index("heterozygosity")))
     unique_legend_labels.insert(0, unique_legend_labels.pop(unique_legend_labels.index("Other")))
 
     # Split the 'window' column up into separate columns for chromosome, start and stop positions
@@ -77,7 +80,11 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
     ibd_table['stop'] = ibd_table['stop'].astype(int)
     ibd_table['midpoint'] = (ibd_table['start'] + ibd_table['stop']) / 2
 
+    # Set the palette for the lines in the plot.
+    # This sets 'Others', then uses the default palette for the first N colours
+    custom_colors = ['LightGrey'] + px.colors.qualitative.Set1[0:len(unique_legend_labels)]
 
+    # Make the plot
     fig = px.line(
         ibd_table,
         x="midpoint", y="distance", color="colour", line_group="candidate",
@@ -87,7 +94,8 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
             'distance' : 'Distance'        
         },
         hover_data=['candidate'],
-        color_discrete_sequence=["gray", "red", "blue"],
+        template="plotly_white",
+        color_discrete_sequence=custom_colors,
         category_orders={'colour': unique_legend_labels},
         facet_row = "chr"
         )

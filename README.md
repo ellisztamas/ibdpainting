@@ -174,6 +174,7 @@ You can see that either the genetic distance from the F9 to one of the parents
 (the red and blue lines) are close to zero in every window.
 This indicates that the parents are correct, and the F9 is homozygous for one or
 the other parental genotype across the genome.
+The grey lines are for other candidate parents, and none are a good match.
 
 ![](1317x6276_rep1_plot_ibd.png)
 

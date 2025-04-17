@@ -34,7 +34,7 @@ setup(
     license='MIT',
     packages=['ibdpainting'],
     install_requires=[
-        'numpy', 'pandas', 'plotly', 'h5py', 'scikit-allel', 'pytest', 'kaleido'
+        'numpy', 'pandas', 'plotly', 'h5py', 'scikit-allel', 'kaleido'
       ],
     zip_safe=False,
     entry_points = {

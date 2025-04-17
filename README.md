@@ -25,6 +25,8 @@ on the generation.
 `ibdpainting` is a tool to visualise this mosaic pattern by 'painting' the
 pattern of IBD across the genome.
 
+For examples of the output and the interpretation of different patterns, see [the examples here](https://ellisztamas.github.io/assets/06_ibdpainting_results.html).
+
 ## Installation
 
 Install with `pip`:
@@ -39,35 +41,82 @@ The program requires two HDF5 files created from VCF files:
 * **Input panel**: An HDF5 file containing SNPs for the crossed individual(s).
 This can contain multiple individuals, but the program will only work on one at
 a time.
-* **Reference panel**: An HDF5 file conataining SNP information for a panel of reference candidate
-parents.
+* **Reference panel**: An HDF5 file conataining SNP information for a panel of
+reference candidate parents.
 
+### Filter SNPs
+
+`ibdpainting` works best if you make sure than the SNPs in the offspring and 
+progeny genotype files have been filtered to have roughly matching SNP positions,
+and that these SNPs are syntenic.
+Below is an example of how to do this for *A. thaliana*.
+This is not the only way, and may or may not be appropriate for other systems.
+
+Download the annotation file `TAIR10_GFF3_genes.gff` giving positions of coding
+genes in the *A. thaliana* reference strain:
+```bash
+genes=https://www.arabidopsis.org/download/file?path=Genes/TAIR10_genome_release/TAIR10_gff3/TAIR10_GFF3_genes.gff
+wget -P $genes
+```
+
+Get a list of SNPs segregating in the progeny, and filter that list for
+positions inside genes.
+Here I'm starting from the progeny because I know that the VCF file for the
+progeny has fewer SNPs than the parents, but in principle this ought to work 
+if you start from the parents as well.
+
+```bash
+# Get a list of SNP positions in the VCF for the progeny
+bcftools view --min-ac 160 progeny.vcf.gz | 
+    bcftools query -f"%CHROM\t%POS\n"  > progeny_snp_positions.txt
+# Convert to BED format. Positions are given as Chr, Position, Position +1
+awk '{print $1"\t"$2"\t"$2+1}' progeny_snp_positions.txt > $progeny_snp_positions.bed
+
+# Select only features labelled as coding genes in the GFF, and convert to BED
+grep "Note=protein_coding_gene" TAIR10_GFF3_genes.gff | awk -F'\t' '{print $1"\t"$4"\t"$5}' > annotated_genes.bed
+
+# Get only those SNPs that are inside genes.
+# Bedtools intersect finds the SNPs inside genes, and awk reformats for bcftools
+# Example output: "Chr1 6063"
+bedtools intersect -a $all_snps_bed -b annotated_genes.bed -wb | \
+awk -F'\t' '{print $1"\t"$2}' | \
+bgzip > snps_in_genes.bed
+```
+
+Use `bcftools` to subset full VCF files for the progent and parents to only 
+contain SNPs inside genes.
+
+```bash
+# Subset the VCF file parents.vcf.gz
+bcftools view \
+    -R snps_in_genes.bed \
+    -O z  \
+    -o parents_subset.vcf.gz \
+    parents.vcf.gz
+
+# Subset the VCF file for the progeny
+bcftools view \
+    -R snps_in_genes.bed \
+    -O z \
+    -o progeny_subset.vcf.gz \
+    progeny.vcf.gz
+```
+
+### Convert to HDF5
+
+`ibdpainting` requires VCF files be converted to HDF5 format.
 The reason for using HDF5 is that it allows for loading data in chunks,
 which is much quicker than loading an entire VCF file into memory every time you
-want to check a single sample. I recommend creating this using
+want to check a single sample.
+
+I recommend creating this using
 [vcf_to_hdf5](https://scikit-allel.readthedocs.io/en/latest/io.html#allel.vcf_to_hdf5)
-from `scikit-allel`. For example:
-```
+from `scikit-allel` in Python. For example:
+
+```python
 import allel
 allel.vcf_to_hdf5('example.vcf', 'example.h5', fields='*', overwrite=True)
 ```
-
-Tips for preparing the data:
-
-* `ibdpainting` will only compare SNPs that intersect the input and reference files.
-One one hand, this means that it does not matter if the offspring and reference
-files contain SNPs that do not match exactly.
-On the other, this may cause problems if you are comparing samples with *loads*
-of structural variation.
-* It is better to have a smaller number of reliable SNPs than a larger number of 
-dubious SNPs. For example, in *Arabopidopsis thaliana* that means only using 
-common SNPs located in genes.
-* `ibdpainting` creates a subplot for every contig label in the input/reference
-panel. If you work on an organism with many chromosomes or incompletely assembled
-contigs, this could get messy. There is currently no way to subset which 
-contigs are shown, so it is probably easiest to supply input data based on only 
-a subset of contigs. The longest contigs are likely to be most informative
-because you are more likely to be able to spot recombination break points.
 
 ## Usage
 
@@ -97,27 +146,74 @@ separated by spaces.
 * `--outdir`: Path to the directory to save the output.
 
 See the output of `ibdpainting --help` for additional optional arguments.
+Notably, `--plot_heterozygosity` adds a line showing the proportion of SNPs 
+called as heterozygous in each window.
 
 ## Output and interpretation
 
-By default, `ibdpainting` creates three files:
-
-* A `plot_ibd.png` image of the genome, showing the position along each chromomosome
-along the x-axis, and the genetic distance from the progeny to each candidate 
-along the y-axis. If a candidate parent is IBD to the progeny, points on the 
-y-axis should be zero, genotyping errors notwithstanding. Candidate parents
-given as expected parents will be shown with coloured lines. The (usually ten)
-next-closest other candidates are shown in grey.
-* An `ibd_score.csv` file listing possible combinations of candidate parents
-and a score for each. The score for a single pair is calculated by the minimum
-distance between the offspring and either candidate in each window, and averaging
-these over all non-NA windows. Scores close to zero indicate a better match.
-A good match will ideally be an order of magnitude better than the next pair.
-Only scores for pairs with the 100 most likely candidates are shown.
-* `plot_ibd.html`: An optional interactive version of the `png` file. Roll over points to see which candidate is which. These files are about ten times larger than the `png` files. Disable with `--no-interactive`.
-* `ibd_table.csv`: An optional text file giving genetic distances from the progeny individual to every candidate in every window. These files are typically big, so are not created by default. Enable with `--keep_ibd_table`.
+`ibdpainting` creates two files for every sample by default, with further 
+optional outputs.
 
 For examples of the output and the interpretation of different patterns, see [the examples here](https://ellisztamas.github.io/assets/06_ibdpainting_results.html).
+
+
+### Plot of genetic distances across the genome
+
+The main results is an image file with the name of the sample name followed
+by `_ibd.png` file.
+This shows the position of windows along each chromomosome along the x-axis, and
+the genetic distance from the progeny to each candidate along the y-axis.
+If a candidate parent is IBD to the progeny, points on the 
+y-axis should be zero, genotyping errors notwithstanding.
+Candidate parents given as expected parents will be shown with coloured lines.
+The next-closest other candidates are shown in grey.
+
+Here is an example of a plot for an F9 individual from a cross between lines
+1317 and 6276.
+You can see that either the genetic distance from the F9 to one of the parents
+(the red and blue lines) are close to zero in every window.
+This indicates that the parents are correct, and the F9 is homozygous for one or
+the other parental genotype across the genome.
+
+![](1317x6276_rep1_plot_ibd.png)
+
+It can be helpful or distracting to also plot the proportion of heterozygous
+calls (i.e. `0/1` and `1/0` in the VCF file) in the offsping.
+This can be set with the flag `--plot_heterozygosity`.
+
+### Scores for each pair
+
+The `ibd_score.csv` file lists possible combinations of candidate parents
+and a score for each.
+The score for a single pair is calculated by the minimum distance between the
+offspring and either candidate in each window, divided by the number of non-NA
+windows.
+Scores close to zero indicate a better match.
+A good match will ideally be an order of magnitude better than the next pair.
+Only scores for pairs with the 100 most likely candidates are shown.
+
+Here is an example for the F9 plotted above.
+
+```
+1317    6276    0.0030699561146607466
+1317    6268    0.017195874394020087
+1317    6255    0.017893302923832646
+1317    9442    0.02333797771181973
+9443    1317    0.024855297212255677
+1317    6252    0.0280539612936829
+9446    1317    0.02823563843279412
+1317    9476    0.03288825690896675
+1317    7517    0.04401124788115839
+```
+
+The first two columns list candidate parents, and the third the score for each.
+You can see that the pair 1317x6276 have an order-of-magnitude better score than
+any other candidate pairing.
+
+### Optional output files.
+
+* `plot_ibd.html`: An optional interactive version of the `png` file. Roll over points to see which candidate is which. These files are about ten times larger than the `png` files. Disable with `--no-interactive`.
+* `ibd_table.csv`: An optional text file giving genetic distances from the progeny individual to every candidate in every window. These files are typically big, so are not created by default. Enable with `--keep_ibd_table`.
 
 ## Author information
 

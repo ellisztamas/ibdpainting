@@ -5,13 +5,20 @@ from genetic data.
 
 ## Contents
 
-- [Premise](#premise)
-- [Installation](#installation)
-- [Input data files](#input-data-files)
-- [Usage](#usage)
-- [Output and interpretation](#output-and-interpretation)
-- [Author information](#author-information)
-- [Contributing](#contributing)
+- [ibdpainting](#ibdpainting)
+  - [Contents](#contents)
+  - [Premise](#premise)
+  - [Installation](#installation)
+  - [Input data files](#input-data-files)
+    - [Filter SNPs](#filter-snps)
+    - [Convert to HDF5](#convert-to-hdf5)
+  - [Usage](#usage)
+  - [Output and interpretation](#output-and-interpretation)
+    - [Plot of genetic distances across the genome](#plot-of-genetic-distances-across-the-genome)
+    - [Scores for each pair](#scores-for-each-pair)
+    - [Optional output files.](#optional-output-files)
+  - [Author information](#author-information)
+  - [Contributing](#contributing)
 
 ## Premise
 
@@ -83,13 +90,14 @@ awk -F'\t' '{print $1"\t"$2}' | \
 bgzip > snps_in_genes.bed
 ```
 
-Use `bcftools` to subset full VCF files for the progent and parents to only 
-contain SNPs inside genes.
+Use `bcftools` to subset full VCF files for the progent and parents to only contain SNPs inside genes.
+It is also recommended to remove variants with duplicate positions (usually where a SNP and indel occur at the same location).
 
 ```bash
 # Subset the VCF file parents.vcf.gz
 bcftools view \
     -R snps_in_genes.bed \
+    -v snps \
     -O z  \
     -o parents_subset.vcf.gz \
     parents.vcf.gz
@@ -97,6 +105,7 @@ bcftools view \
 # Subset the VCF file for the progeny
 bcftools view \
     -R snps_in_genes.bed \
+    -v snps \
     -O z \
     -o progeny_subset.vcf.gz \
     progeny.vcf.gz

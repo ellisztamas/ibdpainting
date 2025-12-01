@@ -10,7 +10,7 @@ readme = "README.md"
 authors = [
     {name = "Tom Ellis", email = "thomas.ellis@gmi.oeaw.ac.at"}
 ]
-license-files = ["LICENCE*"]
+license-files = ["LICENCE"]
 requires-python = ">=3.7"
 dependencies = [
     "numpy",

@@ -3,7 +3,7 @@ import h5py
 import numpy as np
 from ibdpainting.geneticDistance import geneticDistance
 
-def load_genotype_data(input, reference, sample_name):
+def load_genotype_data(input: str, reference: str, sample_name: str) -> geneticDistance:
     """
     Import and merge test and reference data files.
 
@@ -13,18 +13,18 @@ def load_genotype_data(input, reference, sample_name):
     first axis of the genotype call arrays.
 
     Parameters
-    ==========
-    input: str
+    ----------
+    input : str
         Path to a an HDF5 file containing genotype data for one or more samples to check
-    reference: str
+    reference : str
         Path to a HDF5 file containing genotype data for a panel of reference individuals
         to compare the input indivual against.
-    sample_name: str
+    sample_name : str
         Sample name for the individual to check. This must be present in the samples
         in the input file.
 
     Return
-    ======
+    ------
     An object of class geneticDistance.
     """
     # Read in the data files
@@ -40,7 +40,6 @@ def load_genotype_data(input, reference, sample_name):
         'samples' : [ x.decode('utf-8') for x in ref_hdf5['samples'][:] ],
         'chr'     : [ x.decode('utf-8') for x in ref_hdf5['variants/CHROM'][:] ]
     }
-    import time
 
     if sample_name not in input_str_data['samples']:
         raise ValueError("The sample name is not in the list of samples in the input file.")
@@ -76,27 +75,26 @@ def load_genotype_data(input, reference, sample_name):
         'ref'   : [ str(chr) + ":" + str(pos) for chr,pos in zip(ref_str_data['chr'], ref_hdf5['variants/POS'][:]) ]
     }
     # Find the SNP position names that are common to both datasets
-    matching_SNPs_in_both_files = np.intersect1d(
-        snp_names['input'],
-        snp_names['ref']
-        )
+    matching_SNPs_in_both_files = set(set(snp_names['input']) & set(snp_names['ref']))
     which_SNPs_to_keep = {
         "input" : [ x in matching_SNPs_in_both_files for x in snp_names['input'] ],
         "ref"   : [ x in matching_SNPs_in_both_files for x in snp_names['ref'] ]
     }
+    which_SNPs_to_keep = { k : np.where(v)[0] for k,v in which_SNPs_to_keep.items()}
 
+    # Concatenate input and reference genotypes.
+    n_snps = len(matching_SNPs_in_both_files)
+    n_samples = ref_hdf5['calldata/GT'].shape[1] + 1
 
-    # Append the genotype data for the test individual to the array of the reference panel
-    new_geno = np.concatenate(
-        (input_hdf5['calldata/GT'][which_SNPs_to_keep['input'], sample_ix][:, np.newaxis],
-        ref_hdf5['calldata/GT'][which_SNPs_to_keep['ref']]),
-        axis=1
-        )
+    new_geno = np.empty((n_snps, n_samples, 2), dtype=input_hdf5['calldata/GT'].dtype)
+    new_geno[:, 0] = input_hdf5['calldata/GT'][which_SNPs_to_keep['input'], sample_ix]
+    new_geno[:, 1:] = ref_hdf5['calldata/GT'][which_SNPs_to_keep['ref']]
+
     
     # Define an output before closing the Hdf5 file
     output = geneticDistance(
         samples = new_samples,
-        chr = np.array(ref_str_data['chr'])[np.where(which_SNPs_to_keep['ref'])[0]],
+        chr = np.array(ref_str_data['chr'])[which_SNPs_to_keep['ref']],
         pos = ref_hdf5['variants/POS'][:][which_SNPs_to_keep['ref']],
         geno = new_geno
     )

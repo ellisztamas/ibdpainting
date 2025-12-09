@@ -47,6 +47,7 @@ def ibd_scores(ibd_table, rank_threshold:int=100):
     ibd_table = ibd_table.replace(-9,np.nan)
     
     # Get column-mean IBD for each candidate, allowing for missing data
+    # Note the index from 1 onwards to skip the window column
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         ibd_scores_for_each_candidate = np.array(

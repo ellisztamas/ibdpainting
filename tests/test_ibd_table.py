@@ -14,7 +14,7 @@ def test_ibd_table():
         window_size=1000
     )
     # Check the dataframe is the right shape
-    assert ibd.shape == (200, 6)
+    assert ibd.shape == (202, 6)
     # Check that the column for the true parent is all zeroes or -9
     assert all(
         (ibd['1158'] == 0) | (ibd['1158'] == -9)

@@ -3,7 +3,6 @@ import numpy as np
 
 import plotly.express as px
 
-
 def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=[], max_to_plot=10, plot_heterozygosity: bool=False):
     """
     Plot allele sharing across the genome.
@@ -37,10 +36,14 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
     if plot_heterozygosity:
         # If heterozygosity is to be plotted, add it to the list of expected matches
         # so that it is plotted in colour
-        expected_match.insert(0,'heterozygosity')
+        expected_match = expected_match + ['heterozygosity']
+        # Number of non-candidates columns
+        ncol=1
     else:
         # If not plotting heterozygosity, remove it from the table
         ibd_table = ibd_table.drop(columns=['heterozygosity'], axis=1)
+        # Number of non-candidates columns
+        ncol=0
 
     # Coerce missing data to NaN for correct column means.
     ibd_table = ibd_table.replace(-9,np.nan)
@@ -66,11 +69,8 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
         ibd_table['candidate'].isin(expected_match), ibd_table['candidate'], "Other"
         )
     # Unique list of labels for the legend, sorted to plot "Other" first, then
-    # 'heterozygosity' and then the expected matches.
-    unique_legend_labels = list(ibd_table['colour'].unique())
-    if plot_heterozygosity:
-        unique_legend_labels.insert(0, unique_legend_labels.pop(unique_legend_labels.index("heterozygosity")))
-    unique_legend_labels.insert(0, unique_legend_labels.pop(unique_legend_labels.index("Other")))
+    # then the expected matches (including heterozygosity, if using).
+    unique_legend_labels = ['Other'] + expected_match
 
     # Split the 'window' column up into separate columns for chromosome, start and stop positions
     ibd_table[['chr', 'window']] = ibd_table['window'].str.split(":", expand=True)
@@ -79,7 +79,14 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
     ibd_table['start'] = ibd_table['start'].astype(int)
     ibd_table['stop'] = ibd_table['stop'].astype(int)
     ibd_table['midpoint'] = (ibd_table['start'] + ibd_table['stop']) / 2
-
+    
+    # Having heterozygosity and distances together 
+    ibd_table['similarity'] = np.where(
+        ibd_table['colour'] != 'heterozygosity',
+        1-ibd_table['distance'],
+        ibd_table['distance']
+        )
+        
     # Set the palette for the lines in the plot.
     # This sets 'Others', then uses the default palette for the first N colours
     custom_colors = ['LightGrey'] + px.colors.qualitative.Set1[0:len(unique_legend_labels)]
@@ -87,11 +94,11 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
     # Make the plot
     fig = px.line(
         ibd_table,
-        x="midpoint", y="distance", color="colour", line_group="candidate",
+        x="midpoint", y="similarity", color="colour", line_group="candidate",
         title=sample_name,
         labels={
             'midpoint' : 'Position (bp)',
-            'distance' : 'Distance'        
+            'distance' : 'Similarity'        
         },
         hover_data=['candidate'],
         template="plotly_white",

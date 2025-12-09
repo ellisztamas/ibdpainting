@@ -73,10 +73,18 @@ def run_analysis(args):
     from ibdpainting.ibd_table import ibd_table
     from ibdpainting.ibd_scores import ibd_scores
     from ibdpainting.plot_ibd_table import plot_ibd_table
+    
+    if not os.path.isdir(args.outdir):
+        os.makedirs(args.outdir)
 
     # Data frame of IBD at all positions across the genome, and the plot of this
     itable = ibd_table(args.input, args.reference, args.sample_name, args.window_size)
+    
+    print("Calculating the ibd_scores table.")
     scores = ibd_scores(itable)
+    scores.to_csv( args.outdir + "/" + args.sample_name + "_ibd_scores.csv", index=False)
+       
+    print("Creating the plot.")
     fig = plot_ibd_table(
         itable,
         args.sample_name,
@@ -84,25 +92,23 @@ def run_analysis(args):
         args.max_to_plot,
         args.plot_heterozygosity
         )
-    
-    if not os.path.isdir(args.outdir):
-        os.makedirs(args.outdir)
-    
-    if args.keep_ibd_table:
-        itable.to_csv(args.outdir + "/" + args.sample_name + "_ibd_table.csv", index=False)
-    
-    scores.to_csv( args.outdir + "/" + args.sample_name + "_ibd_scores.csv", index=False)
-
+    png_out = args.outdir + "/" + args.sample_name + "_plot_ibd.png"
+    print(f"Writing to {png_out}")
     fig.write_image(
-        args.outdir + "/" + args.sample_name + "_plot_ibd.png",
+        png_out,
         height = args.height, width = args.width
         )
     
     if args.interactive:
+        html_out = args.outdir + "/" + args.sample_name + "_plot_ibd.html"
+        print(f"Writing an interactive plot to {html_out}.")
         fig.write_html(args.outdir + "/" + args.sample_name + "_plot_ibd.html")
+                
+    if args.keep_ibd_table:
+        itable_path = args.outdir + "/" + args.sample_name + "_ibd_table.csv"
+        print(f"Writing the full ibd_table to {itable_path}")
+        itable.to_csv(itable_path, index=False)
     
-
-
 
 if __name__ == '__main__':
     main()

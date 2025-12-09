@@ -18,7 +18,8 @@ dependencies = [
     "plotly",
     "h5py",
     "scikit-allel",
-    "kaleido<1"
+    "kaleido<1",
+    "tqdm"
 ]
 
 [project.urls]

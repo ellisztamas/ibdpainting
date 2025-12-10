@@ -32,7 +32,7 @@ on the generation.
 `ibdpainting` is a tool to visualise this mosaic pattern by 'painting' the
 pattern of IBD across the genome.
 
-For examples of the output and the interpretation of different patterns, see [the examples here](https://ellisztamas.github.io/assets/06_ibdpainting_results.html).
+For examples of the output and the interpretation of different patterns, see [the examples here](https://ellisztamas.github.io/assets/06_ibdpainting_results.html) (Note that this was created with an earlier version of `ibdpainting` and the y-axes show *distances* not *similarities*).
 
 ## Installation
 
@@ -163,33 +163,36 @@ called as heterozygous in each window.
 `ibdpainting` creates two files for every sample by default, with further 
 optional outputs.
 
-For examples of the output and the interpretation of different patterns, see [the examples here](https://ellisztamas.github.io/assets/06_ibdpainting_results.html).
-
-
 ### Plot of genetic distances across the genome
 
 The main results is an image file with the name of the sample name followed
 by `_ibd.png` file.
 This shows the position of windows along each chromomosome along the x-axis, and
-the genetic distance from the progeny to each candidate along the y-axis.
+the genetic similarity from the progeny to each candidate along the y-axis.
 If a candidate parent is IBD to the progeny, points on the 
-y-axis should be zero, genotyping errors notwithstanding.
+y-axis should be one, genotyping errors notwithstanding.
 Candidate parents given as expected parents will be shown with coloured lines.
 The next-closest other candidates are shown in grey.
 
 Here is an example of a plot for an F9 individual from a cross between lines
 1317 and 6276.
-You can see that either the genetic distance from the F9 to one of the parents
-(the red and blue lines) are close to zero in every window.
+You can see that either the genetic similarity from the F9 to one of the parents
+(the red and blue lines) are close to one in every window.
 This indicates that the parents are correct, and the F9 is homozygous for one or
 the other parental genotype across the genome.
 The grey lines are for other candidate parents, and none are a good match.
+This is exactly what you would expect for an inbred F9 individual.
 
 ![](1317x6276_rep1_plot_ibd.png)
 
 It can be helpful or distracting to also plot the proportion of heterozygous
 calls (i.e. `0/1` and `1/0` in the VCF file) in the offsping.
 This can be set with the flag `--plot_heterozygosity`.
+In the case above you can see that no windows show evidence of heterozygosity.
+
+For more examples of the output and the interpretation of different patterns, see [the examples here](https://ellisztamas.github.io/assets/06_ibdpainting_results.html).
+Note that this was created with an earlier version of `ibdpainting` and the y-axes show *distances* not *similarities*.
+That means that values close to zero reflect a close match.
 
 ### Scores for each pair
 

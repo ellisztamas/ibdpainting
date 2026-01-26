@@ -9,11 +9,11 @@ from tqdm import tqdm
 from ibdpainting.find_matching_markers import find_matching_markers
 # input    ="/groups/nordborg/projects/crosses/tom/03_processing/11_genotype_calls_pipeline/output/08_validation_pipeline/hdf5/test.hdf5"
 # reference="/groups/nordborg/projects/crosses/tom/03_processing/11_genotype_calls_pipeline/output/08_validation_pipeline/hdf5/reference.hdf5"
-# sample_name = "9408x9352_rep2"
+# sample_name = "9408x9352_F8_rep2"
 # expected_match=['9408', '9352']
 # window_size = 500000
 
-def pairwise_distance(geno):
+def pairwise_distance(geno, ref_sample_names, expected_match:list[str]=[]):
     """
     Calculate pairwise genetic distance between an input individual and all 
     reference individuals.
@@ -23,41 +23,62 @@ def pairwise_distance(geno):
     pair, summed over all loci. The calculation is done using masked arrays to
     account for missing data.
     
+    If a list of two expected parents is given as `expected_match`, this adds an
+    additional reference individual as the expected genotype of the F1 between
+    those parents.
+    
     This actually returns one minus the genetic distances, so that perfect
     matches have a score of one.
 
     Returns
     =======
-    Vector of one minus distances
+    Vector of similarities between the sample and every reference genotype.
+    The final element is the similarity with the expected genotype of an F1 
+    between the expected parents, if used.
+    The similarity is one minus the mean of distances across loci, excluding
+    cases with missing data.
 
     """
+    # Array of genotypes, with missing values masked.
     masked_geno = ma.masked_array(geno, geno < 0)
-    # Calculate differences at each locus
-    per_locus_difference = abs(masked_geno.sum(2)[:,[0]] - masked_geno.sum(2)[:,1:]) / 2
-    # Average over loci
-    dxy = per_locus_difference.mean(0)
+    # Vector of diploid genotypes for the sample
+    sample_geno      = masked_geno[:,0].sum(1)
+    sample_geno.mask = masked_geno[:,0].mask.any(axis=1)
+    # Array of diploid genotypes for the reference panel
+    ref_geno      = masked_geno[:,1:].sum(2)
+    ref_geno.mask = masked_geno[:,1:].mask.any(axis=1)
     
-    return ma.filled(dxy, -9)
+    # If there are exactly two expected parents, add an additional reference
+    # genotype, corresponding to the expected genotype of the F1 between those
+    # lines.
+    if len(expected_match) == 2:
+        # Indices of the expected parents
+        expected_ix = [ref_sample_names.index(item) for item in expected_match]
+        # Diploid genotypes of the expected parents
+        exp_diploid      = masked_geno[:,expected_ix].sum(2)
+        exp_diploid.mask = masked_geno[:,expected_ix].mask.any(axis=2)
+        # Calculate the expected genotype of an F1
+        exp_F1 = exp_diploid.sum(axis=1)
+        exp_F1.mask = np.ma.getmaskarray(exp_diploid).any(axis=1)
+        exp_F1 = exp_F1 / 2
+        # When one of the expected parents is heterozygous we can't know what the 
+        # expected genotype will be. This means the expected genotype will be a float
+        # not equal to 0, 1 or 2. Set these calls to NA.
+        exp_F1.mask = ma.getmaskarray(exp_F1) | ~np.isin(exp_F1.data, np.array([0,1,2]))
+        # Ensure data type matches the reference genotypes.
+        exp_F1 = exp_F1.astype(ref_geno.dtype)
+        # Concatenate expected F1 genotype to the reference panel.
+        ref_geno = ma.hstack([ref_geno, exp_F1[:,np.newaxis]])
 
+    # Array of genetic distances from the sample to each candidate, including the
+    # pseudoheterozygote
+    difference_array = abs(sample_geno[:,np.newaxis] - ref_geno) / 2
+    # A vector of average distances for each reference candidate
+    difference_vector = difference_array.mean(axis=0)
+    
+    # Return the result as a vector of *similarities*
+    return ma.filled(1-difference_vector, np.nan)
 
-def get_heterozygosity(geno):
-    """
-    Calculate heterozygosity in the input individual.
-
-    The calculation is done using masked arrays to account for missing data.
-
-    Returns
-    =======
-    Float between zero and one.
-    """
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        
-        masked_geno = ma.masked_array(geno, geno < 0)
-        per_locus_heterozygosity = masked_geno.sum(2)[:,0] == 1
-        mean_heterozygosity = ma.filled(per_locus_heterozygosity.mean(), np.nan)
-        
-        return mean_heterozygosity
 
 def genotype_calls_by_window(input_hdf5, ref_hdf5, chr, start, stop, matching_markers):
     """
@@ -103,7 +124,8 @@ def genotype_calls_by_window(input_hdf5, ref_hdf5, chr, start, stop, matching_ma
     
     return new_geno
 
-def ibd_table(input:str, reference:str, sample_name:str, window_size:int):
+
+def ibd_table(input:str, reference:str, sample_name:str, expected_match:list[str]=[], window_size:int=500000):
     """
     Compare allele sharing across the genome.
 
@@ -121,6 +143,10 @@ def ibd_table(input:str, reference:str, sample_name:str, window_size:int):
     sample_name: str
         Sample name for the individual to check.
         This must be present in the samples in the input HDF5 file.
+    expected_match: List of str
+        List of names (as strings) of the expected parents. If there are exactly
+        two expected parents, the expected genotype of their F1 will be included
+        as an additional reference panel.
     window_size: int
         Window size in base pairs.
 
@@ -143,9 +169,12 @@ def ibd_table(input:str, reference:str, sample_name:str, window_size:int):
     # Vector of sample names for the reference panel
     ref_sample_names = [ x.decode('utf-8') for x in ref_hdf5['samples'][:]]
     # Header for the output dataframe
-    genetic_distances_header = ['window','chr', 'start', 'stop'] + ref_sample_names + ['heterozygosity']
-    
-    # Empty dict to store genetic distances (vectors) and heterozygosity (floats)
+    genetic_distances_header = ['window','chr', 'start', 'stop'] + ref_sample_names
+    # If there are two expected parents, add an extra header for the expected F1
+    if len(expected_match) == 2:
+        genetic_distances_header = genetic_distances_header + ['Expected_F1']
+
+    # Empty dict to store genetic distances (vectors)
     # Indexed by window_name
     genetic_distances = []
     for chr in np.unique(input_hdf5['variants/CHROM'][:]):
@@ -160,12 +189,11 @@ def ibd_table(input:str, reference:str, sample_name:str, window_size:int):
             # Matrix of genotype calls
             geno = genotype_calls_by_window(input_hdf5, ref_hdf5, chr, start, stop,  matching_markers)
             # Vector of genetic distances from the test individual to every reference.
-            distances = pairwise_distance(geno)
-            # Float giving heterozygosity of the test individual
-            heterozygosity = get_heterozygosity(geno)
-            # Dataframe with a single row, giving window position, distances and heterozygosity
+            distances = pairwise_distance(geno, ref_sample_names, expected_match)
+            
+            # Dataframe with a single row, giving window position, distances
             genetic_distances.append(pd.DataFrame(
-                [[window, chr.decode('utf-8'), start, stop] + distances.tolist() + [heterozygosity]],
+                [[window, chr.decode('utf-8'), start, stop] + distances.tolist() ],
                 columns = genetic_distances_header
                 )
             )
@@ -177,7 +205,7 @@ def ibd_table(input:str, reference:str, sample_name:str, window_size:int):
     genetic_distances = genetic_distances.sort_values(by=['chr', 'start'])
     
     # Column gymnastics to ensure we have columns 'window', then one col for each
-    # reference individual, and 'heterozygosity'.
+    # reference individual.
     genetic_distances = genetic_distances.drop(columns=['chr', 'start', 'stop'])
     
     input_hdf5.close()

@@ -23,7 +23,7 @@ def main():
     )
     parser.add_argument('--expected_match',
         help="Optional list of sample names in the reference panel that are expected to be ancestors of the test individual.",
-        nargs = "+", required=False
+        nargs = "+", required=False, default=[]
     )
     parser.add_argument('--outdir',
         help="Directory to save the output."
@@ -49,11 +49,6 @@ def main():
     parser.add_argument('--width',
         help="Height in pixels of the output PNG file. Defaults to 900.",
         default=900)
-    parser.add_argument('--plot_heterozygosity',
-        help="If set, plot the heterozygosity of the test individual in the output plot.",
-        default=True,
-        action=argparse.BooleanOptionalAction
-    )
     parser.add_argument('--version',
         action='version',
         version=f'%(prog)s {__version__}'
@@ -78,7 +73,13 @@ def run_analysis(args):
         os.makedirs(args.outdir)
 
     # Data frame of IBD at all positions across the genome, and the plot of this
-    itable = ibd_table(args.input, args.reference, args.sample_name, args.window_size)
+    itable = ibd_table(
+        input = args.input,
+        reference=args.reference,
+        sample_name=args.sample_name,
+        expected_match=args.expected_match,
+        window_size=args.window_size
+        )
     
     print("Calculating the ibd_scores table.")
     scores = ibd_scores(itable)
@@ -89,8 +90,7 @@ def run_analysis(args):
         itable,
         args.sample_name,
         args.expected_match,
-        args.max_to_plot,
-        args.plot_heterozygosity
+        args.max_to_plot
         )
     png_out = args.outdir + "/" + args.sample_name + "_plot_ibd.png"
     print(f"Writing to {png_out}")

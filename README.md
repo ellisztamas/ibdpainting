@@ -24,8 +24,8 @@ from genetic data.
 
 `ibdpainting` addresses the situation where you have multiple individuals
 derived from a crosses between individuals in a reference panel, and you want to
-verify that the crosses really are the genotype you think they are. Taking the
-simple example of a biparental cross, you would expect an offspring of the F2 
+verify that the crosses really are the genotype you think they are.
+Taking the simple example of a biparental cross, you would expect an offspring of the F2 
 generation or later to be a mosaic of regions that are identical by descent (IBD)
 to either parent, potentially interspersed with heterozygous regions, depending
 on the generation.
@@ -33,6 +33,8 @@ on the generation.
 pattern of IBD across the genome.
 
 For examples of the output and the interpretation of different patterns, see [the examples here](https://ellisztamas.github.io/assets/06_ibdpainting_results.html) (Note that this was created with an earlier version of `ibdpainting` and the y-axes show *distances* not *similarities*).
+
+The program is also available as an automated [snakemake pipeline](https://github.com/ellisztamas/ibdpainting_pipeline).
 
 ## Installation
 
@@ -155,8 +157,7 @@ separated by spaces.
 * `--outdir`: Path to the directory to save the output.
 
 See the output of `ibdpainting --help` for additional optional arguments.
-Notably, `--plot_heterozygosity` adds a line showing the proportion of SNPs 
-called as heterozygous in each window.
+
 
 ## Output and interpretation
 

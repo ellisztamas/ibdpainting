@@ -11,6 +11,7 @@ ibd = ip.ibd_table(
     input=input,
     reference=reference,
     sample_name='S2.06.002',
+    expected_match=['6024'],
     window_size=1000
 )
 

@@ -3,7 +3,7 @@ import numpy as np
 
 import plotly.express as px
 
-def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=[], max_to_plot=10, plot_heterozygosity: bool=False):
+def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=[], max_to_plot=10):
     """
     Plot allele sharing across the genome.
 
@@ -32,21 +32,9 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
     is an expected parent or not. Rolling over the lines shows which sample is
     which.
     """
-
-    if plot_heterozygosity:
-        # If heterozygosity is to be plotted, add it to the list of expected matches
-        # so that it is plotted in colour
-        expected_match = expected_match + ['heterozygosity']
-        # Number of non-candidates columns
-        ncol=1
-    else:
-        # If not plotting heterozygosity, remove it from the table
-        ibd_table = ibd_table.drop(columns=['heterozygosity'], axis=1)
-        # Number of non-candidates columns
-        ncol=0
-
-    # Coerce missing data to NaN for correct column means.
-    ibd_table = ibd_table.replace(-9,np.nan)
+    # Add the expected F1 to the list of expected matches so that it is plotted in colour
+    if len(expected_match) == 2:
+        expected_match = expected_match + ['Expected_F1']
 
     # Identify the candidate names *not* among the top `max_to_plot` columns and remove
     # If `max_to_plot` is less than the number of candidates.
@@ -63,7 +51,7 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
         ibd_table = ibd_table.drop(columns=columns_to_drop) # drop the candidates
 
     # Make the table long
-    ibd_table = ibd_table.melt(id_vars=['window'], var_name='candidate', value_name='distance')
+    ibd_table = ibd_table.melt(id_vars=['window'], var_name='candidate', value_name='similarity')
     # Column indicating which candidates should be plotted a different colour.
     ibd_table['colour'] = np.where(
         ibd_table['candidate'].isin(expected_match), ibd_table['candidate'], "Other"
@@ -79,13 +67,6 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
     ibd_table['start'] = ibd_table['start'].astype(int)
     ibd_table['stop'] = ibd_table['stop'].astype(int)
     ibd_table['midpoint'] = (ibd_table['start'] + ibd_table['stop']) / 2
-    
-    # Having heterozygosity and distances together 
-    ibd_table['similarity'] = np.where(
-        ibd_table['colour'] != 'heterozygosity',
-        1-ibd_table['distance'],
-        ibd_table['distance']
-        )
         
     # Set the palette for the lines in the plot.
     # This sets 'Others', then uses the default palette for the first N colours

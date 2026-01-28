@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import warnings
+import itertools
 
 def ibd_scores(ibd_table, rank_threshold:int=100):
     """
@@ -13,7 +14,7 @@ def ibd_scores(ibd_table, rank_threshold:int=100):
     
     Beginning with a table of genetic distances between a test individual and
     each genotype in a reference panel, this function compares all plausible 
-    pairs of candidates and pulls out the *minimum* genetic distance to the 
+    pairs of candidates and pulls out the *maximum* genetic similarity to the 
     offspring in each window. It then takes the average over windows, excluding
     windows with NA values.
     
@@ -53,23 +54,28 @@ def ibd_scores(ibd_table, rank_threshold:int=100):
     # Get the indices of the top N values in ibd_scores_for_each_candidate
     # where N is rank_threshold
     if rank_threshold < ibd_table.shape[1]:
-        score_ix = np.argpartition(-ibd_scores_for_each_candidate, -rank_threshold)[-rank_threshold:]
+        score_ix = np.argpartition(ibd_scores_for_each_candidate, -rank_threshold)[-rank_threshold:]
     else:
         score_ix = np.arange(len(ibd_scores_for_each_candidate))
     
     # For each pair of candidates indexed by score_ix, pull out the minimum 
     # genetic distance from the offspring in each window.
+    
+    # Reference sample names, excluding the column for window
+    # +1 is to skip the column with window names
+    ref_names = ibd_table.keys()[score_ix+1]
     scores_for_pairs = []
-    for i in score_ix+1: # +1 is to skip the column with window names
-        for j in score_ix+1:
-            if j >= i:
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore")
-                    # List containing the ID of candidates 1 and 2, plus the minimum genetic distance
-                    scores_for_pairs.append(
-                        [ibd_table.keys()[i], ibd_table.keys()[j], np.nanmean(ibd_table.iloc[:, [i,j]].min(axis=1, skipna=False))]
-                        )
-    scores_for_pairs = pd.DataFrame(scores_for_pairs, columns = ['parent1', 'parent2', 'min_IBD'])
-    scores_for_pairs = scores_for_pairs.sort_values('min_IBD')
+    for i,j in itertools.combinations_with_replacement(ref_names,2):
+        # The maximum similarity at each window between the test individual and 
+        # *either* reference genotype in this pair
+        max_similarity_pair = ibd_table[[i,j]].max(axis=1, skipna=False)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            # List containing the ID of candidates 1 and 2, plus the minimum genetic distance
+            scores_for_pairs.append(
+                [ i,j, np.nanmean(max_similarity_pair) ]
+                )
+    scores_for_pairs = pd.DataFrame(scores_for_pairs, columns = ['parent1', 'parent2', 'max_IBD'])
+    scores_for_pairs = scores_for_pairs.sort_values('max_IBD', ascending=False)
     
     return scores_for_pairs

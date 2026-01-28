@@ -7,11 +7,7 @@ from tqdm import tqdm
 
 
 from ibdpainting.find_matching_markers import find_matching_markers
-# input    ="/groups/nordborg/projects/crosses/tom/03_processing/11_genotype_calls_pipeline/output/08_validation_pipeline/hdf5/test.hdf5"
-# reference="/groups/nordborg/projects/crosses/tom/03_processing/11_genotype_calls_pipeline/output/08_validation_pipeline/hdf5/reference.hdf5"
-# sample_name = "9408x9352_F8_rep2"
-# expected_match=['9408', '9352']
-# window_size = 500000
+
 
 def pairwise_distance(geno, ref_sample_names, expected_match:list[str]=[]):
     """
@@ -29,7 +25,7 @@ def pairwise_distance(geno, ref_sample_names, expected_match:list[str]=[]):
     
     This actually returns one minus the genetic distances, so that perfect
     matches have a score of one.
-
+    
     Returns
     =======
     Vector of similarities between the sample and every reference genotype.

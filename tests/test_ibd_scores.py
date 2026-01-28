@@ -12,8 +12,9 @@ ibd = ip.ibd_table(
     reference=reference,
     sample_name='S2.06.002',
     expected_match=['6024'],
-    window_size=1000
+    window_size=10000
 )
+
 
 def test_ibd_scores_works():
     """Test basic functionality of ibd_scores
@@ -48,5 +49,5 @@ def test_ibd_scores_propogates_NA():
     scores = ip.ibd_scores(ibd)
     
     assert all(
-        scores.loc[scores['parent1'] == "1158"]['min_IBD'].isna()
+        scores.loc[scores['parent1'] == "1158"]['max_IBD'].isna()
     )

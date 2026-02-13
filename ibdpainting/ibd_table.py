@@ -1,7 +1,6 @@
 import h5py
 import pandas as pd
 import numpy as np
-import warnings
 import numpy.ma as ma
 from tqdm import tqdm
 
@@ -35,14 +34,17 @@ def pairwise_distance(geno, ref_sample_names, expected_match:list[str]=[]):
     cases with missing data.
 
     """
-    # Array of genotypes, with missing values masked.
+    # NxM array of genotypes, with missing values masked.
     masked_geno = ma.masked_array(geno, geno < 0)
-    # Vector of diploid genotypes for the sample
+    # NxM array of positions where either allele is missing
+    mask_any = masked_geno.mask.any(axis=2)
+
+    # Nx1 Vector of diploid genotypes for the sample
     sample_geno      = masked_geno[:,0].sum(1)
-    sample_geno.mask = masked_geno[:,0].mask.any(axis=1)
-    # Array of diploid genotypes for the reference panel
+    sample_geno.mask = mask_any[:,0] # Mask SNP positions with any missing data
+    # Nx(M-1) Array of diploid genotypes for the reference panel
     ref_geno      = masked_geno[:,1:].sum(2)
-    ref_geno.mask = masked_geno[:,1:].mask.any(axis=1)
+    ref_geno.mask = mask_any[:,1:]
     
     # If there are exactly two expected parents, add an additional reference
     # genotype, corresponding to the expected genotype of the F1 between those

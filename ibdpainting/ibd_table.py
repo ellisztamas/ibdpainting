@@ -51,7 +51,8 @@ def pairwise_distance(geno, ref_sample_names, expected_match:list[str]=[]):
     # lines.
     if len(expected_match) == 2:
         # Indices of the expected parents
-        expected_ix = [ref_sample_names.index(item) for item in expected_match]
+        # The +1 is there because masked_geno has an extra column in position 0.
+        expected_ix = [ref_sample_names.index(item)+1 for item in expected_match]
         # Diploid genotypes of the expected parents
         exp_diploid      = masked_geno[:,expected_ix].sum(2)
         exp_diploid.mask = masked_geno[:,expected_ix].mask.any(axis=2)
@@ -67,7 +68,7 @@ def pairwise_distance(geno, ref_sample_names, expected_match:list[str]=[]):
         exp_F1 = exp_F1.astype(ref_geno.dtype)
         # Concatenate expected F1 genotype to the reference panel.
         ref_geno = ma.hstack([ref_geno, exp_F1[:,np.newaxis]])
-
+    
     # Array of genetic distances from the sample to each candidate, including the
     # pseudoheterozygote
     difference_array = abs(sample_geno[:,np.newaxis] - ref_geno) / 2

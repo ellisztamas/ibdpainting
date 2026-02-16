@@ -58,24 +58,45 @@ def ibd_scores(ibd_table, rank_threshold:int=100):
     else:
         score_ix = np.arange(len(ibd_scores_for_each_candidate))
     
-    # For each pair of candidates indexed by score_ix, pull out the minimum 
-    # genetic distance from the offspring in each window.
-    
+       
     # Reference sample names, excluding the column for window
-    # +1 is to skip the column with window names
-    ref_names = ibd_table.keys()[score_ix+1]
-    scores_for_pairs = []
-    for i,j in itertools.combinations_with_replacement(ref_names,2):
-        # The maximum similarity at each window between the test individual and 
-        # *either* reference genotype in this pair
-        max_similarity_pair = ibd_table[[i,j]].max(axis=1, skipna=False)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            # List containing the ID of candidates 1 and 2, plus the minimum genetic distance
-            scores_for_pairs.append(
-                [ i,j, np.nanmean(max_similarity_pair) ]
-                )
-    scores_for_pairs = pd.DataFrame(scores_for_pairs, columns = ['parent1', 'parent2', 'max_IBD'])
-    scores_for_pairs = scores_for_pairs.sort_values('max_IBD', ascending=False)
+    all_names = ibd_table.keys()[1:] # All names in the reference panel
+    ref_names = all_names[score_ix] # Top candidates
+    # For calculating scores for pairs we don't want combinations with 'Expected_F1'
+    pair_names = list(ref_names)
+    if 'Expected_F1' in pair_names:
+        pair_names.remove("Expected_F1")
     
-    return scores_for_pairs
+    # Dataframe giving the scores if parents are selfed.
+    score_table = pd.DataFrame({
+        'parent1'    : ref_names,
+        'parent2'    : ref_names, # Under selfing Parent1 and Parent2 are the same. 
+        'similarity' : ibd_scores_for_each_candidate[score_ix]
+    })
+    
+    # Get scores for all pairs of top parents.
+    # This is the maxmimum similarity score for either parent in a pair in each
+    # window.
+    # No pairs should contain "Expected_F1" as a candidate.
+    if rank_threshold > 1:
+        scores_for_pairs = []
+        for i,j in itertools.combinations(pair_names,2):
+            # The maximum similarity at each window between the test individual and 
+            # *either* reference genotype in this pair
+            max_similarity_pair = ibd_table[[i,j]].max(axis=1, skipna=False)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                # List containing the ID of candidates 1 and 2 and the average of
+                # the best similarities at each window.
+                scores_for_pairs.append(
+                    [ i,j, np.nanmean(max_similarity_pair) ]
+                    )
+        scores_for_pairs = pd.DataFrame(scores_for_pairs, columns = ['parent1', 'parent2', 'similarity'])
+    
+        # A single dataframe combining scores for selfed and pairs.
+        score_table = pd.concat([score_table, scores_for_pairs])
+        
+    # Sort so the best matches are at the top
+    score_table = score_table.sort_values('similarity', ascending=False)
+    
+    return score_table

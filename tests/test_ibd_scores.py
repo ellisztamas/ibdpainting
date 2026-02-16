@@ -49,5 +49,5 @@ def test_ibd_scores_propogates_NA():
     scores = ip.ibd_scores(ibd)
     
     assert all(
-        scores.loc[scores['parent1'] == "1158"]['max_IBD'].isna()
+        scores.loc[scores['parent1'] == "1158"]['similarity'].isna()
     )

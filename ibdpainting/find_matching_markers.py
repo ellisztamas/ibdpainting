@@ -56,10 +56,6 @@ def find_matching_markers(input: str, reference: str, sample_name: str) -> dict:
         sample_ix = np.where(
             [ sample_name == x for x in input_str_data['samples'] ]
             )[0][0]
-        # Join vectors of sample names, with the test individual first
-        new_samples = np.append(
-            input_str_data['samples'][sample_ix], ref_str_data['samples']
-            )
 
     # Check that contig labels match
     chr_labels = {
@@ -78,12 +74,40 @@ def find_matching_markers(input: str, reference: str, sample_name: str) -> dict:
     else:
         print("Contig labels seem to match between the input and reference panels.")
 
+
     # Make sure we only compare SNPs that are found in both datasets.
     # Concatenate chromosome labels and SNP positions
     snp_names = {
         'input' : [ str(chr) + ":" + str(pos) for chr,pos in zip(input_str_data['chr'], input_hdf5['variants/POS'][:]) ],
         'ref'   : [ str(chr) + ":" + str(pos) for chr,pos in zip(ref_str_data['chr'], ref_hdf5['variants/POS'][:]) ]
     }
+
+
+    # Check for duplicate SNP positions
+    if len(snp_names['input']) != len(set(snp_names['input'])):
+        raise ValueError(
+            f"""The input dataset contains duplicate markers.
+            
+            The dataset contains {len(snp_names['input'])} markers, but only {len(set(snp_names['input']))} are unique.
+            This is usually caused when multiallelic SNPs are collapsed into separate biallelic SNPs.
+            Possible culprits:
+                - bcftools merge with --merge none
+                - Conversion to HDF5 using scikit-allel
+            
+            Remove these SNPs and recreate the HDF5 file.""")
+    if len(snp_names['ref']) != len(set(snp_names['ref'])):
+        raise ValueError(
+            f"""The input dataset contains duplicate markers.
+            
+            The dataset contains {len(snp_names['reference'])} markers, but only {len(set(snp_names['reference']))} are unique.
+            This is usually caused when multiallelic SNPs are collapsed into separate biallelic SNPs.
+            Possible culprits:
+                - bcftools merge with --merge none
+                - Conversion to HDF5 using scikit-allel
+            
+            Remove these SNPs and recreate the HDF5 file.""")
+    
+
     # Find the SNP position names that are common to both datasets
     matching_SNPs_in_both_files = set(set(snp_names['input']) & set(snp_names['ref']))
     which_SNPs_to_keep = {
@@ -92,6 +116,7 @@ def find_matching_markers(input: str, reference: str, sample_name: str) -> dict:
     }
     print(f"{len(matching_SNPs_in_both_files)} markers are found in both the input and reference panels.")
 
+    
     output = {
         'sample_ix' : sample_ix,
         'input' : which_SNPs_to_keep['input'],

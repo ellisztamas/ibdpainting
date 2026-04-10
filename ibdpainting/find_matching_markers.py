@@ -1,7 +1,37 @@
 import h5py
 import numpy as np
+import textwrap
 
-def find_matching_markers(input: str, reference: str, sample_name: str) -> dict:
+def require_dataset(f: h5py.File, path: str) -> h5py.Dataset:
+    """
+    Validate that `path` exists and is a Dataset in an open HDF5 file.
+    Returns a lazy h5py.Dataset handle — no data is loaded into memory.
+    """
+    if path not in f:
+        raise KeyError(f"Expected dataset {path!r} not found in {f.filename}.")
+    obj = f[path]
+    if not isinstance(obj, h5py.Dataset):
+        raise TypeError(f"{path!r} is a {type(obj).__name__}, expected an h5py.Dataset.")
+    return obj
+
+
+def _raise_duplicate_marker_error(*, panel_label: str, total: int, unique: int) -> None:
+    msg = textwrap.dedent(f"""
+        The {panel_label} dataset contains duplicate markers.
+        The dataset contains {total} markers, but only {unique} are unique.
+
+        This is usually caused when multiallelic SNPs are collapsed into separate biallelic SNPs.
+
+        Possible culprits:
+          - bcftools merge with --merge none
+          - Conversion to HDF5 using scikit-allel
+
+        Remove these SNPs and recreate the HDF5 file.
+    """).strip()
+    raise ValueError(msg)
+
+
+def find_matching_markers(input_path: str, reference_path: str, sample_name: str) -> dict:
     """
     Prepare HDF5 files for further processing.
 
@@ -11,9 +41,9 @@ def find_matching_markers(input: str, reference: str, sample_name: str) -> dict:
 
     Parameters
     ----------
-    input : str
+    input_path : str
         Path to a an HDF5 file containing genotype data for one or more samples to check
-    reference : str
+    reference_path : str
         Path to a HDF5 file containing genotype data for a panel of reference individuals
         to compare the input indivual against.
     sample_name : str
@@ -31,99 +61,45 @@ def find_matching_markers(input: str, reference: str, sample_name: str) -> dict:
     pos : np.array
         Array of positions labels for shared SNPs
     """
-    # Read in the data files
-    input_hdf5 = h5py.File(input, mode='r')
-    ref_hdf5  = h5py.File(reference, mode="r")
+    with h5py.File(input_path, "r") as input_hdf5, h5py.File(reference_path, "r") as ref_hdf5:
+        input_samples = require_dataset(input_hdf5, "samples").asstr()[...]
+        input_chr     = require_dataset(input_hdf5, "variants/CHROM").asstr()[...]
+        input_pos     = require_dataset(input_hdf5, "variants/POS")[...]
 
-    # The HDF5 files contain byte strings
-    # Convert them back to regular strings
-    input_str_data = {
-        'samples' : [ x.decode('utf-8') for x in input_hdf5['samples'][:] ],
-        'chr'     : [ x.decode('utf-8') for x in input_hdf5['variants/CHROM'][:]]
-    }
-    ref_str_data = {
-        'samples' : [ x.decode('utf-8') for x in ref_hdf5['samples'][:] ],
-        'chr'     : [ x.decode('utf-8') for x in ref_hdf5['variants/CHROM'][:] ]
-    }
-    print(f"The reference panel contains {len(ref_str_data['samples'])} samples and {len(ref_str_data['chr'])} loci.")
-    print(f"The test panel contains {len(input_str_data['samples'])} samples and {len(input_str_data['chr'])} loci.")
+        #ref_samples   = require_dataset(ref_hdf5, "samples").asstr()[...]
+        ref_chr       = require_dataset(ref_hdf5, "variants/CHROM").asstr()[...]
+        ref_pos       = require_dataset(ref_hdf5, "variants/POS")[...]
+        if sample_name not in input_samples:
+            raise ValueError(f"Sample {sample_name!r} not found in input file {input_path!r}.")
 
-    if sample_name not in input_str_data['samples']:
-        raise ValueError("The sample name is not in the list of samples in the input file.")
-    else: 
-        print(f"Sample {sample_name} identified correctly in the list of samples in the input file.")
         # Find the position of the individual to test
-        sample_ix = np.where(
-            [ sample_name == x for x in input_str_data['samples'] ]
-            )[0][0]
+        sample_ix = int(list(input_samples).index(sample_name))
 
-    # Check that contig labels match
-    chr_labels = {
-        'input' : np.unique(input_str_data['chr']),
-        'ref'   : np.unique(ref_str_data['chr'])
-    }
-    if len(chr_labels['input']) != len(chr_labels['ref']):
-        raise ValueError(
-            "The number of unique contig labels do not match: the input an HDF5 has {}, but the reference panel has {}.".
-            format( chr_labels['input'], chr_labels['ref'] )
-        )
-    elif any( chr_labels['input'] != chr_labels['ref'] ):
-        raise ValueError(
-            "Contig labels do not match between the input and reference files."
-        )
-    else:
-        print("Contig labels seem to match between the input and reference panels.")
+        # Check that contig labels match (set-wise + ordering)
+        input_contigs = np.unique(input_chr)
+        ref_contigs = np.unique(ref_chr)
+        if input_contigs.shape != ref_contigs.shape or np.any(input_contigs != ref_contigs):
+            raise ValueError("Contig labels do not match between the input and reference files.")
 
+        # Concatenate chromosome labels and SNP positions
+        snp_names_input = [f"{c}:{p}" for c, p in zip(input_chr, input_pos)]
+        snp_names_ref   = [f"{c}:{p}" for c, p in zip(ref_chr, ref_pos)]
 
-    # Make sure we only compare SNPs that are found in both datasets.
-    # Concatenate chromosome labels and SNP positions
-    snp_names = {
-        'input' : [ str(chr) + ":" + str(pos) for chr,pos in zip(input_str_data['chr'], input_hdf5['variants/POS'][:]) ],
-        'ref'   : [ str(chr) + ":" + str(pos) for chr,pos in zip(ref_str_data['chr'], ref_hdf5['variants/POS'][:]) ]
-    }
+        # Check for duplicate SNP positions
+        n_in = len(snp_names_input)
+        n_in_unique = len(set(snp_names_input))
+        if n_in != n_in_unique:
+            _raise_duplicate_marker_error(panel_label="input", total=n_in, unique=n_in_unique)
 
+        n_ref = len(snp_names_ref)
+        n_ref_unique = len(set(snp_names_ref))
+        if n_ref != n_ref_unique:
+            _raise_duplicate_marker_error(panel_label="reference", total=n_ref, unique=n_ref_unique)
 
-    # Check for duplicate SNP positions
-    if len(snp_names['input']) != len(set(snp_names['input'])):
-        raise ValueError(
-            f"""The input dataset contains duplicate markers.
-            
-            The dataset contains {len(snp_names['input'])} markers, but only {len(set(snp_names['input']))} are unique.
-            This is usually caused when multiallelic SNPs are collapsed into separate biallelic SNPs.
-            Possible culprits:
-                - bcftools merge with --merge none
-                - Conversion to HDF5 using scikit-allel
-            
-            Remove these SNPs and recreate the HDF5 file.""")
-    if len(snp_names['ref']) != len(set(snp_names['ref'])):
-        raise ValueError(
-            f"""The input dataset contains duplicate markers.
-            
-            The dataset contains {len(snp_names['reference'])} markers, but only {len(set(snp_names['reference']))} are unique.
-            This is usually caused when multiallelic SNPs are collapsed into separate biallelic SNPs.
-            Possible culprits:
-                - bcftools merge with --merge none
-                - Conversion to HDF5 using scikit-allel
-            
-            Remove these SNPs and recreate the HDF5 file.""")
-    
+        # Find markers common to both datasets
+        shared = set(snp_names_input) & set(snp_names_ref)
 
-    # Find the SNP position names that are common to both datasets
-    matching_SNPs_in_both_files = set(set(snp_names['input']) & set(snp_names['ref']))
-    which_SNPs_to_keep = {
-        "input" : [ x in matching_SNPs_in_both_files for x in snp_names['input'] ],
-        "ref"   : [ x in matching_SNPs_in_both_files for x in snp_names['ref'] ]
-    }
-    print(f"{len(matching_SNPs_in_both_files)} markers are found in both the input and reference panels.")
+        keep_input = np.fromiter((x in shared for x in snp_names_input), dtype=bool, count=n_in)
+        keep_ref   = np.fromiter((x in shared for x in snp_names_ref), dtype=bool, count=n_ref)
 
-    
-    output = {
-        'sample_ix' : sample_ix,
-        'input' : which_SNPs_to_keep['input'],
-        'ref' : which_SNPs_to_keep['ref']
-        }
-    
-    input_hdf5.close()
-    ref_hdf5.close()
-
-    return output
+    return {"sample_ix": sample_ix, "input": keep_input, "ref": keep_ref}

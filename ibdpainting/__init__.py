@@ -2,7 +2,7 @@
 
 __author__ = """Tom Ellis"""
 __email__ = 'thomas.ellis@gmi.oeaw.ac.at'
-__version__ = '0.9.0'
+__version__ = '0.9.2'
 
 import sys
 
@@ -14,7 +14,7 @@ if not sys.argv[0].endswith('ibdpainting'):
     from ibdpainting.plot_ibd_table import plot_ibd_table
 
     __all__ = [
-        'load_genotype_data',
+        'find_matching_markers',
         'ibd_table',
         'ibd_scores',
         'plot_ibd_table'

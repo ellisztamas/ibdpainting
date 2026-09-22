@@ -29,16 +29,26 @@ def main():
         help="Directory to save the output."
     )
     parser.add_argument('--keep_ibd_table', 
-        help="If set, write an intermediate text file giving genetic distance between the crossed individual and each candidate at each window in the genome. Defaults to False, because these can be quite large.",
+        help=(
+        "If set, write an intermediate text file giving genetic distance between "
+        "the crossed individual and each candidate at each window in the genome. "
+        "Defaults to False, because these can be quite large."
+        ),
         default=False,
         action=argparse.BooleanOptionalAction
     )
     parser.add_argument('--max_to_plot', 
-        help="Optional number of the best matching candidates to plot so that the HTML files do not get too large and complicated. Ignored if this is more than the number of samples. Defaults to 20.",
+        help=(
+        "Optional number of the best matching candidates to plot so that the "
+        "HTML files do not get too large and complicated. Ignored if this is "
+        "more than the number of samples. Defaults to 20.",
         type=int, default = 10
     )
     parser.add_argument('--interactive',
-        help="If set, save the output plot as an interactive HTML plot including information on candidates within the plot.",
+        help=(
+        "If set, save the output plot as an interactive HTML plot including"
+        "information on candidates within the plot."
+        ),
         default=True,
         action=argparse.BooleanOptionalAction
         )
@@ -49,6 +59,15 @@ def main():
     parser.add_argument('--width',
         help="Height in pixels of the output PNG file. Defaults to 900.",
         default=900)
+    parser.add_argument('--plot_heterozygosity',
+        help=(
+        "If True output plots include a curve for the expected F1 genotype "
+        "between the expected parents. This only works if there are exactly "
+        "two expected parents. Defaults to False."
+    ),
+        default=False,
+        action=argparse.BooleanOptionalAction
+        )
     parser.add_argument('--version',
         action='version',
         version=f'%(prog)s {__version__}'
@@ -90,7 +109,8 @@ def run_analysis(args):
         itable,
         args.sample_name,
         args.expected_match,
-        args.max_to_plot
+        args.max_to_plot,
+        args.plot_heterozygosity
         )
     png_out = args.outdir + "/" + args.sample_name + "_plot_ibd.png"
     print(f"Writing to {png_out}")

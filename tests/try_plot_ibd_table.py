@@ -21,6 +21,7 @@ fig = ip.plot_ibd_table(
 )
 fig.show()
 
+# Check that a warning is printed if there are not two expected parents
 fig = ip.plot_ibd_table(
     ibd_table = ibd,
     sample_name = '1158',
@@ -28,7 +29,14 @@ fig = ip.plot_ibd_table(
     max_to_plot=10,
     plot_heterozygosity = True
 )
-fig.show()
+fig = ip.plot_ibd_table(
+    ibd_table = ibd,
+    sample_name = '1158',
+    expected_match = ['1158','6124','8249'],
+    max_to_plot=10,
+    plot_heterozygosity = True
+)
+
 
 fig = ip.plot_ibd_table(
     ibd_table = ibd,

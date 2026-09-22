@@ -1,9 +1,16 @@
 import pandas as pd
 import numpy as np
+from warnings import warn
 
 import plotly.express as px
 
-def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=[], max_to_plot=10):
+def plot_ibd_table(
+        ibd_table:pd.DataFrame,
+        sample_name:str,
+        expected_match:list=[],
+        max_to_plot=10,
+        plot_heterozygosity=True
+        ):
     """
     Plot allele sharing across the genome.
 
@@ -23,6 +30,10 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
     expected_match: list
         List of sample names in the reference panel that are expected to be
         ancestors of the test individual.
+    plot_heterozygosity: bool
+        If True and there are exactly two expected parents the output plot 
+        includes a line showing the match to expected heterozygote between the
+        expected parents.
 
     Returns
     =======
@@ -33,8 +44,11 @@ def plot_ibd_table(ibd_table:pd.DataFrame, sample_name:str, expected_match:list=
     which.
     """
     # Add the expected F1 to the list of expected matches so that it is plotted in colour
-    if len(expected_match) == 2:
-        expected_match = expected_match + ['Expected_F1']
+    if plot_heterozygosity:
+        if len(expected_match) != 2:
+            warn(f"Plotting expected heterozygosity only works if their are two expected parents, but {len(expected_match)} were given.")
+        else:
+            expected_match = expected_match + ['Expected_F1']
 
     # Identify the candidate names *not* among the top `max_to_plot` columns and remove
     # If `max_to_plot` is less than the number of candidates.

@@ -41,7 +41,8 @@ def main():
         help=(
         "Optional number of the best matching candidates to plot so that the "
         "HTML files do not get too large and complicated. Ignored if this is "
-        "more than the number of samples. Defaults to 20.",
+        "more than the number of samples. Defaults to 20."
+        ),
         type=int, default = 10
     )
     parser.add_argument('--interactive',

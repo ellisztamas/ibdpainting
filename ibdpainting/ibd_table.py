@@ -209,6 +209,15 @@ def ibd_table(input:str, reference:str, sample_name:str, expected_match:list[str
     
     input_hdf5.close()
     ref_hdf5.close()
+
+    # When a sample has poor genotype data, this causes all columns in genetic_distances to be NA.
+    na_columns = genetic_distances.isna().all()
+    if na_columns.any():
+        raise ValueError(
+            f"{int(na_columns.sum())} reference samples do not share any SNP calls with the test individual.\n"
+            " This is probably because one or more individuals have many missing (./.) SNP calls.\n"
+            " Please verify that all individuals have sufficient genotype, and exclude poor samples."
+            )
     
     return genetic_distances
 
